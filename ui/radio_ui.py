@@ -7,9 +7,12 @@ from datetime import datetime
 from database import insert_radio_log
 
 UNITS = {
-    "Unit A": ["Front Gate", "Rear Lot", "Loading Dock"],
-    "Unit B": ["Warehouse", "East Fence", "Break Area"],
-    "Unit C": ["Main Lobby", "Parking Garage", "Server Room"]
+    "Unit 21": ["AEI The Rock", "Andrews", "Breeden Lot", "CCDC", "CEP", "CEP - Bldg 60", "CEP - Gate 1", "CEP - Gate 7", "CEP - Gate 82", "CEP - Gate 96", "City PG", "COB", "COB - CSOC", "COB Brown St. Lot", "Cole PG", "COM", "CSS", "CTC", "FSP", "Hangar", "IOB", "Lionbridge", "Skooters", "SMC", "SSC", "Union Hall/Reeves"],
+    "Unit 22": ["AEI The Rock", "Andrews", "Breeden Lot", "CCDC", "CEP", "CEP - Bldg 60", "CEP - Gate 1", "CEP - Gate 7", "CEP - Gate 82", "CEP - Gate 96", "City PG", "COB", "COB - CSOC", "COB Brown St. Lot", "Cole PG", "COM", "CSS", "CTC", "FSP", "Hangar", "IOB", "Lionbridge", "Skooters", "SMC", "SSC", "Union Hall/Reeves"],
+    "Unit 31": ["AEI The Rock", "Andrews", "Breeden Lot", "CCDC", "CEP", "CEP - Bldg 60", "CEP - Gate 1", "CEP - Gate 7", "CEP - Gate 82", "CEP - Gate 96", "City PG", "COB", "COB - CSOC", "COB Brown St. Lot", "Cole PG", "COM", "CSS", "CTC", "FSP", "Hangar", "IOB", "Lionbridge", "Skooters", "SMC", "SSC", "Union Hall/Reeves"],
+    "Unit 32": ["AEI The Rock", "Andrews", "Breeden Lot", "CCDC", "CEP", "CEP - Bldg 60", "CEP - Gate 1", "CEP - Gate 7", "CEP - Gate 82", "CEP - Gate 96", "City PG", "COB", "COB - CSOC", "COB Brown St. Lot", "Cole PG", "COM", "CSS", "CTC", "FSP", "Hangar", "IOB", "Lionbridge", "Skooters", "SMC", "SSC", "Union Hall/Reeves"],
+    "Unit 41": ["CEP", "CEP - Gate 7", "CMEP", "CMIC", "COB", "COB - CSOC", "CESC", "OLY", "SEMI", "SEP", "SILC", "Test Track", "WSS"],
+    "Unit 42": ["CEP", "CEP - Gate 7", "CMEP", "CMIC", "COB", "COB - CSOC", "CESC", "OLY", "SEMI", "SEP", "SILC", "Test Track", "WSS"]
 }
 
 REASONS = ["Routine Patrol", "Suspicious Activity", "Access Check", "Escort", "Alarm Response"]
