@@ -3,14 +3,50 @@ from PyQt6.QtWidgets import (
     QFileDialog, QLineEdit, QTextEdit, QMessageBox
 )
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QDragEnterEvent, QDropEvent
 from msg_parser import parse_msg
 from database import insert_email_log
+from datetime import datetime
 
 EMAIL_TABS = [
     "Data Request", "Incident Report", "Muster Report",
     "Parking Tag App", "Badge Deactivation",
     "Everbridge Alert", "Notification", "Other"
 ]
+
+class DragDropLabel(QLabel):
+    def __init__(self, parent):
+        super().__init__("Drag a .msg file here or click to select\n(Requires Outlook installed)")
+        self.parent = parent
+        self.setStyleSheet("border: 2px dashed #888; padding: 20px;")
+        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.setAcceptDrops(True)
+
+    def dragEnterEvent(self, event: QDragEnterEvent):
+        if event.mimeData().hasUrls():
+            urls = event.mimeData().urls()
+            if any(url.toLocalFile().endswith('.msg') for url in urls):
+                event.acceptProposedAction()
+                self.setStyleSheet("border: 2px solid #4CAF50; padding: 20px; background-color: #E8F5E9;")
+            else:
+                event.ignore()
+        else:
+            event.ignore()
+
+    def dragLeaveEvent(self, event):
+        self.setStyleSheet("border: 2px dashed #888; padding: 20px;")
+
+    def dropEvent(self, event: QDropEvent):
+        urls = event.mimeData().urls()
+        for url in urls:
+            filepath = url.toLocalFile()
+            if filepath.endswith('.msg'):
+                self.parent.load_msg_file(filepath)
+                break
+        self.setStyleSheet("border: 2px dashed #888; padding: 20px;")
+
+    def mousePressEvent(self, event):
+        self.parent.select_file()
 
 class EmailPanel(QWidget):
     def __init__(self):
@@ -33,12 +69,13 @@ class EmailPanel(QWidget):
         self.tabs.currentChanged.connect(self.switch_tab)
         layout.addWidget(self.tabs)
 
-        self.drop_label = QLabel("Drag a .msg file here or click to select")
-        self.drop_label.setStyleSheet("border: 2px dashed #888; padding: 20px;")
-        self.drop_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.drop_label.setAcceptDrops(True)
-        self.drop_label.mousePressEvent = self.select_file
+        self.drop_label = DragDropLabel(self)
         layout.addWidget(self.drop_label)
+
+        # Add manual entry button
+        manual_btn = QPushButton("Enter Email Info Manually")
+        manual_btn.clicked.connect(self.enable_manual_entry)
+        layout.addWidget(manual_btn)
 
         self.fields_layout = QVBoxLayout()
         self.dynamic_fields = {}
@@ -57,6 +94,10 @@ class EmailPanel(QWidget):
         self.current_tab = EMAIL_TABS[index]
         self.clear_fields()
         self.populate_fields(self.current_tab)
+        
+        # If we're in manual entry mode, make fields editable again
+        if self.save_btn.isEnabled() and (not self.msg_path or self.msg_path == "Manual Entry"):
+            self.make_fields_editable()
 
     def clear_fields(self):
         for i in reversed(range(self.fields_layout.count())):
@@ -92,6 +133,12 @@ class EmailPanel(QWidget):
         self.fields_layout.addWidget(box)
         self.meta_fields[label_text] = box
 
+    def make_fields_editable(self):
+        """Make meta fields editable for manual entry"""
+        for field in self.meta_fields.values():
+            field.setReadOnly(False)
+            field.setStyleSheet("background-color: white;")
+
     def add_line_edit(self, label_text):
         box = QLineEdit()
         box.setPlaceholderText(label_text)
@@ -104,16 +151,53 @@ class EmailPanel(QWidget):
         self.fields_layout.addWidget(box)
         self.dynamic_fields[label_text] = box
 
-    def select_file(self, event):
+    def enable_manual_entry(self):
+        """Enable manual entry without a .msg file"""
+        self.make_fields_editable()
+        self.save_btn.setEnabled(True)
+        self.drop_label.setText("Manual entry mode - no file loaded")
+        self.msg_path = None
+
+    def select_file(self):
         path, _ = QFileDialog.getOpenFileName(self, "Select .msg File", "", "Outlook Messages (*.msg)")
         if path:
+            self.load_msg_file(path)
+
+    def load_msg_file(self, path):
+        try:
             self.msg_path = path
             self.drop_label.setText(f"Loaded: {path.split('/')[-1]}")
             self.email_meta = parse_msg(path)
-            self.fill_meta_fields()
-            self.save_btn.setEnabled(True)
+            
+            # Check if there was an error parsing
+            if self.email_meta.get("error", False):
+                QMessageBox.warning(
+                    self, 
+                    "Outlook Error", 
+                    "Could not parse the .msg file.\n\n"
+                    "Make sure Microsoft Outlook is installed and configured.\n\n"
+                    "You can still manually enter the email information."
+                )
+                # Allow manual entry even if parsing failed
+                self.make_fields_editable()
+                self.save_btn.setEnabled(True)
+            else:
+                self.fill_meta_fields()
+                self.save_btn.setEnabled(True)
+        except Exception as e:
+            QMessageBox.critical(
+                self,
+                "Error",
+                f"Failed to load file: {str(e)}\n\n"
+                "You can use 'Enter Email Info Manually' instead."
+            )
+            self.drop_label.setText("Error loading file - try manual entry")
 
     def fill_meta_fields(self):
+        # Only fill fields if we have valid data (no error)
+        if self.email_meta.get("error", False):
+            return
+            
         if self.current_tab == "Notification":
             if "Sender" in self.meta_fields:
                 self.meta_fields["Sender"].hide()
@@ -132,11 +216,34 @@ class EmailPanel(QWidget):
 
     def save_log(self):
         log_type = self.current_tab
-        sender = self.meta_fields.get("Sender").text() if "Sender" in self.meta_fields else None
+        
+        # Get field values - allow manual entry if parsing failed
+        sender = None
+        if "Sender" in self.meta_fields:
+            text = self.meta_fields["Sender"].text()
+            # Only use the text if it's not an error message
+            if text and not text.startswith("Error"):
+                sender = text
+        
         recipient = self.dynamic_fields.get("Recipient Name").text() if "Recipient Name" in self.dynamic_fields else None
-        subject = self.meta_fields.get("Subject").text() if "Subject" in self.meta_fields else None
-        timestamp = self.meta_fields.get("Received Time").text() if "Received Time" in self.meta_fields else None
-        msg_path = self.msg_path
+        
+        subject = None
+        if "Subject" in self.meta_fields:
+            text = self.meta_fields["Subject"].text()
+            if text and not text.startswith("Could not parse"):
+                subject = text
+        
+        timestamp = None
+        if "Received Time" in self.meta_fields:
+            text = self.meta_fields["Received Time"].text()
+            if text:
+                timestamp = text
+        
+        # If no timestamp from parsing, use current time
+        if not timestamp:
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        msg_path = self.msg_path if self.msg_path else "Manual Entry"
 
         # Only 1 extra field max for now
         extra_field = None

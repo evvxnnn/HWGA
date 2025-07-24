@@ -5,6 +5,19 @@ from datetime import datetime
 DB_PATH = os.path.join("data", "ops_logger.db")
 
 def init_db():
+    # Check if the file exists and is corrupted
+    if os.path.exists(DB_PATH):
+        try:
+            # Try to connect and execute a simple query
+            conn = sqlite3.connect(DB_PATH)
+            c = conn.cursor()
+            c.execute("SELECT name FROM sqlite_master WHERE type='table'")
+            conn.close()
+        except sqlite3.DatabaseError:
+            # File is corrupted, remove it
+            print(f"Database file corrupted, creating new one...")
+            os.remove(DB_PATH)
+    
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
 
