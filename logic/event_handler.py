@@ -1,6 +1,7 @@
 import sqlite3
+import os
 from datetime import datetime
-from database import DB_PATH
+from database import DB_PATH, get_log_details
 
 # Load all logs with timestamp from all tables
 def load_all_logs():
@@ -86,23 +87,40 @@ def get_event_chain_logs(event_id):
     conn.close()
     return rows
 
-# Optional: Load summary of a log by source_table and id
+# Get summary of a log by source_table and id
 def get_log_summary(table, log_id):
+    """Get a meaningful summary of the log"""
+    details = get_log_details(table, log_id)
+    if not details:
+        return "(No summary available)"
+    
+    if table == "email_logs":
+        return f"{details.get('log_type', 'Email')}: {details.get('subject', 'No subject')}"
+    elif table == "phone_logs":
+        caller = details.get('caller_name', 'Unknown')
+        call_type = details.get('call_type', 'Phone')
+        if details.get('site_code'):
+            return f"{call_type} from {caller} - Site {details['site_code']}"
+        else:
+            return f"{call_type} from {caller}"
+    elif table == "radio_logs":
+        return f"{details.get('unit', 'Unit')} - {details.get('reason', 'Unknown reason')}"
+    elif table == "everbridge_logs":
+        message = details.get('message', '')
+        return message[:50] + "..." if len(message) > 50 else message
+    else:
+        return "(Unknown log type)"
+
+# Update event chain (for editing)
+def update_event_chain(event_id, title, description):
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-
-    if table == "email_logs":
-        c.execute("SELECT subject FROM email_logs WHERE id = ?", (log_id,))
-    elif table == "phone_logs":
-        c.execute("SELECT call_type FROM phone_logs WHERE id = ?", (log_id,))
-    elif table == "radio_logs":
-        c.execute("SELECT reason FROM radio_logs WHERE id = ?", (log_id,))
-    elif table == "everbridge_logs":
-        c.execute("SELECT message FROM everbridge_logs WHERE id = ?", (log_id,))
-    else:
-        return "Unknown source"
-
-    row = c.fetchone()
+    
+    c.execute("""
+        UPDATE event_chains 
+        SET title = ?, description = ?
+        WHERE id = ?
+    """, (title, description, event_id))
+    
+    conn.commit()
     conn.close()
-
-    return row[0] if row else "(No summary)"
