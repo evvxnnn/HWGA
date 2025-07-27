@@ -1,19 +1,17 @@
-from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QLabel, QComboBox, QLineEdit,
-    QPushButton, QHBoxLayout, QCheckBox, QMessageBox,
-    QMainWindow, QStatusBar, QGroupBox, QButtonGroup
-)
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QShortcut, QKeySequence
-from datetime import datetime
-from database import insert_radio_log
-from ui.styles import *
+# Application Settings for Security Ops Logger
+# Handles display scaling and user preferences
+
+import json
+import os
+
+# Don't import Qt-related items at module level to avoid initialization issues
+app_settings = None
 
 class AppSettings:
     """Manage application settings and preferences"""
     
     def __init__(self):
-        self.settings = QSettings("SecurityOps", "Logger")
+        # Use simple file-based settings instead of QSettings
         self.config_file = "user_preferences.json"
         self.load_settings()
     
@@ -23,7 +21,7 @@ class AppSettings:
             "display_scale": 1.0,
             "start_fullscreen": True,
             "show_shortcuts": True,
-            "theme": "default",
+            "theme": "dark",  # Default to dark theme
             "auto_timestamp": True,
             "confirm_exit": True,
             "default_site": "",
@@ -65,7 +63,7 @@ class AppSettings:
         """Set display scale factor"""
         self.set("display_scale", scale)
 
-# Global settings instance
+# Create global instance
 app_settings = AppSettings()
 
 def apply_display_scaling(app):
@@ -77,6 +75,7 @@ def apply_display_scaling(app):
         os.environ["QT_SCALE_FACTOR"] = str(scale)
         
         # For high DPI displays
+        from PyQt6.QtCore import Qt
         app.setAttribute(Qt.ApplicationAttribute.AA_EnableHighDpiScaling, True)
         app.setAttribute(Qt.ApplicationAttribute.AA_UseHighDpiPixmaps, True)
 

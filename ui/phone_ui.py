@@ -7,7 +7,13 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QShortcut, QKeySequence
 from datetime import datetime
 from database import insert_phone_log
-from ui.styles import *
+from ui.styles import (
+    Fonts, Colors,
+    INPUT_STYLE, TABLE_STYLE, LIST_STYLE, DROPDOWN_STYLE,
+    get_button_style, make_accessible,
+    show_error, show_success
+)
+
 
 CALL_TYPES = [
     "Everbridge", "Incident Report", "Ongoing Incident",
@@ -64,7 +70,7 @@ class PhonePanel(QMainWindow):
         title = QLabel("📞 Phone Call Logger")
         title.setFont(Fonts.TITLE)
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        title.setStyleSheet(f"color: {Colors.PHONE}; margin-bottom: 20px;")
+        title.setStyleSheet("margin-bottom: 20px;")
         layout.addWidget(title)
 
         # Call Type Dropdown

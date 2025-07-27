@@ -47,13 +47,36 @@ def get_button_style(color, height=60):
         }}
         QPushButton:hover {{
             background-color: {color}CC;
+            border: 2px solid {color};
         }}
         QPushButton:pressed {{
             background-color: {color}99;
         }}
         QPushButton:disabled {{
-            background-color: #CCCCCC;
-            color: #666666;
+            background-color: #555555;
+            color: #999999;
+        }}
+    """
+
+# Colored button styles that work with dark theme
+def get_colored_button_style(color, height=60):
+    return f"""
+        QPushButton {{
+            background-color: {color};
+            color: white;
+            border: 1px solid {color};
+            border-radius: 10px;
+            padding: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            min-height: {height}px;
+        }}
+        QPushButton:hover {{
+            background-color: {color}DD;
+            border: 2px solid white;
+        }}
+        QPushButton:pressed {{
+            background-color: {color}AA;
         }}
     """
 

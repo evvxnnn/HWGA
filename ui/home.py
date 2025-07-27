@@ -10,8 +10,6 @@ from ui.radio_ui import RadioPanel
 from ui.everbridge_ui import EverbridgePanel
 from ui.event_manager_ui import EventManager
 from ui.stats_ui import StatsPanel
-from ui.settings_dialog import SettingsDialog
-from app_settings import app_settings
 from datetime import datetime
 
 class HomeWindow(QMainWindow):
@@ -76,6 +74,7 @@ class HomeWindow(QMainWindow):
         layout.addWidget(log_label)
         
         # Button configuration with shortcuts
+        from app_settings import app_settings
         show_shortcuts = app_settings.get("show_shortcuts", True)
         button_config = {
             "Emails": ("📧 Emails", "F1", "#2196F3"),
@@ -284,6 +283,7 @@ class HomeWindow(QMainWindow):
     
     def show_settings(self):
         """Show settings dialog"""
+        from ui.settings_dialog import SettingsDialog
         dialog = SettingsDialog(self)
         dialog.exec()
     
@@ -309,6 +309,7 @@ class HomeWindow(QMainWindow):
     
     def closeEvent(self, event):
         """Handle window close event"""
+        from app_settings import app_settings
         if app_settings.get("confirm_exit", True):
             reply = QMessageBox.question(
                 self,

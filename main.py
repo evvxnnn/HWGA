@@ -14,11 +14,12 @@ def show_splash():
     splash_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
     splash_widget.setStyleSheet("""
         QLabel {
-            background-color: #1976D2;
+            background-color: #1e1e1e;
             color: white;
             font-size: 36px;
             font-weight: bold;
             padding: 100px;
+            border: 2px solid #007ACC;
         }
     """)
     splash_widget.setMinimumSize(600, 400)

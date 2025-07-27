@@ -7,7 +7,13 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QShortcut, QKeySequence
 from datetime import datetime
 from database import insert_radio_log
-from ui.styles import *
+from ui.styles import (
+    Fonts, Colors,
+    INPUT_STYLE, TABLE_STYLE, LIST_STYLE, DROPDOWN_STYLE,
+    get_button_style, make_accessible,
+    show_error, show_success
+)
+
 
 UNITS = {
     "Unit 21": ["AEI The Rock", "Andrews", "Breeden Lot", "CCDC", "CEP", "CEP - Bldg 60", "CEP - Gate 1", "CEP - Gate 7", "CEP - Gate 82", "CEP - Gate 96", "City PG", "COB", "COB - CSOC", "COB Brown St. Lot", "Cole PG", "COM", "CSS", "CTC", "FSP", "Hangar", "IOB", "Lionbridge", "Skooters", "SMC", "SSC", "Union Hall/Reeves"],
@@ -58,7 +64,7 @@ class RadioPanel(QMainWindow):
         title = QLabel("📻 Radio Dispatch Logger")
         title.setFont(Fonts.TITLE)
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        title.setStyleSheet(f"color: {Colors.RADIO}; margin-bottom: 30px;")
+        title.setStyleSheet("margin-bottom: 30px;")
         layout.addWidget(title)
 
         # Time section with visual enhancement

@@ -9,7 +9,14 @@ from PyQt6.QtGui import QFont, QColor, QShortcut, QKeySequence
 import sqlite3
 from datetime import datetime, timedelta
 from database import DB_PATH
-from ui.styles import *
+from ui.styles import (
+    Fonts, Colors,
+    INPUT_STYLE, TABLE_STYLE, LIST_STYLE, DROPDOWN_STYLE, TAB_STYLE,
+    get_button_style, make_accessible,
+    show_error, show_success
+)
+
+
 
 class StatsPanel(QMainWindow):
     def __init__(self):
@@ -18,13 +25,13 @@ class StatsPanel(QMainWindow):
         self.setMinimumSize(1200, 800)
         self.showMaximized()
         
-        self.init_ui()
-        self.setup_shortcuts()
-        
         # Status bar
         self.status_bar = QStatusBar()
         self.setStatusBar(self.status_bar)
         self.status_bar.showMessage("Loading statistics...")
+        
+        self.init_ui()
+        self.setup_shortcuts()
 
     def init_ui(self):
         # Central widget
@@ -138,6 +145,8 @@ class StatsPanel(QMainWindow):
                 text-align: center;
                 font-size: 14px;
                 height: 30px;
+                color: white;
+                background-color: #2d2d30;
             }
             QProgressBar::chunk {
                 background-color: #4CAF50;

@@ -1,0 +1,17 @@
+{
+  "display_scale": 1.0,
+  "start_fullscreen": true,
+  "show_shortcuts": true,
+  "theme": "dark",
+  "auto_timestamp": true,
+  "confirm_exit": true,
+  "default_site": "",
+  "window_positions": {
+    "main": {
+      "x": 0,
+      "y": 23,
+      "width": 2048,
+      "height": 1257
+    }
+  }
+}

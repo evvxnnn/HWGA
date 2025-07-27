@@ -2,12 +2,24 @@ from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, 
     QPushButton, QSlider, QCheckBox, QGroupBox,
     QComboBox, QLineEdit, QDialogButtonBox,
-    QMessageBox
+    QMessageBox, QApplication
 )
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont
 from app_settings import app_settings
-from ui.styles import *
+
+# Import styles only when needed to avoid circular imports
+def get_styles():
+    try:
+        from ui.styles import Fonts
+        return Fonts
+    except ImportError:
+        # Fallback if styles aren't available
+        class FallbackFonts:
+            TITLE = QFont("Arial", 20, QFont.Weight.Bold)
+            LABEL = QFont("Arial", 14, QFont.Weight.Bold)
+            NORMAL = QFont("Arial", 12)
+        return FallbackFonts
 
 class SettingsDialog(QDialog):
     def __init__(self, parent=None):
@@ -15,6 +27,7 @@ class SettingsDialog(QDialog):
         self.setWindowTitle("Settings")
         self.setModal(True)
         self.setMinimumSize(600, 500)
+        self.Fonts = get_styles()
         self.init_ui()
         self.load_current_settings()
     
@@ -24,14 +37,26 @@ class SettingsDialog(QDialog):
         
         # Title
         title = QLabel("⚙️ Application Settings")
-        title.setFont(Fonts.TITLE)
+        title.setFont(self.Fonts.TITLE)
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(title)
         
         # Display Settings
         display_group = QGroupBox("Display Settings")
-        display_group.setFont(Fonts.LABEL)
+        display_group.setFont(self.Fonts.LABEL)
         display_layout = QVBoxLayout()
+        
+        # Theme selector
+        theme_layout = QHBoxLayout()
+        theme_layout.addWidget(QLabel("Theme:"))
+        
+        self.theme_combo = QComboBox()
+        self.theme_combo.addItems(["Dark", "Light"])
+        self.theme_combo.setFont(self.Fonts.NORMAL)
+        theme_layout.addWidget(self.theme_combo)
+        theme_layout.addStretch()
+        
+        display_layout.addLayout(theme_layout)
         
         # Display Scale
         scale_layout = QHBoxLayout()
@@ -65,7 +90,7 @@ class SettingsDialog(QDialog):
         
         # Fullscreen option
         self.fullscreen_check = QCheckBox("Start in fullscreen mode")
-        self.fullscreen_check.setFont(Fonts.NORMAL)
+        self.fullscreen_check.setFont(self.Fonts.NORMAL)
         display_layout.addWidget(self.fullscreen_check)
         
         display_group.setLayout(display_layout)
@@ -73,19 +98,19 @@ class SettingsDialog(QDialog):
         
         # Behavior Settings
         behavior_group = QGroupBox("Behavior Settings")
-        behavior_group.setFont(Fonts.LABEL)
+        behavior_group.setFont(self.Fonts.LABEL)
         behavior_layout = QVBoxLayout()
         
         self.shortcuts_check = QCheckBox("Show keyboard shortcuts in buttons")
-        self.shortcuts_check.setFont(Fonts.NORMAL)
+        self.shortcuts_check.setFont(self.Fonts.NORMAL)
         behavior_layout.addWidget(self.shortcuts_check)
         
         self.timestamp_check = QCheckBox("Auto-fill timestamp with current time")
-        self.timestamp_check.setFont(Fonts.NORMAL)
+        self.timestamp_check.setFont(self.Fonts.NORMAL)
         behavior_layout.addWidget(self.timestamp_check)
         
         self.confirm_exit_check = QCheckBox("Confirm before exiting application")
-        self.confirm_exit_check.setFont(Fonts.NORMAL)
+        self.confirm_exit_check.setFont(self.Fonts.NORMAL)
         behavior_layout.addWidget(self.confirm_exit_check)
         
         behavior_group.setLayout(behavior_layout)
@@ -93,14 +118,14 @@ class SettingsDialog(QDialog):
         
         # Default Values
         defaults_group = QGroupBox("Default Values")
-        defaults_group.setFont(Fonts.LABEL)
+        defaults_group.setFont(self.Fonts.LABEL)
         defaults_layout = QVBoxLayout()
         
         site_layout = QHBoxLayout()
         site_layout.addWidget(QLabel("Default Site Code:"))
         self.default_site_edit = QLineEdit()
         self.default_site_edit.setPlaceholderText("e.g., MAIN, DC1")
-        self.default_site_edit.setFont(Fonts.NORMAL)
+        self.default_site_edit.setFont(self.Fonts.NORMAL)
         site_layout.addWidget(self.default_site_edit)
         defaults_layout.addLayout(site_layout)
         
@@ -137,6 +162,9 @@ class SettingsDialog(QDialog):
         scale = int(app_settings.get_display_scale() * 100)
         self.scale_slider.setValue(scale)
         
+        theme = app_settings.get("theme", "dark")
+        self.theme_combo.setCurrentText(theme.capitalize())
+        
         self.fullscreen_check.setChecked(app_settings.get("start_fullscreen", True))
         self.shortcuts_check.setChecked(app_settings.get("show_shortcuts", True))
         self.timestamp_check.setChecked(app_settings.get("auto_timestamp", True))
@@ -149,7 +177,12 @@ class SettingsDialog(QDialog):
         old_scale = app_settings.get_display_scale()
         new_scale = self.scale_slider.value() / 100.0
         
+        # Check if theme changed
+        old_theme = app_settings.get("theme", "dark")
+        new_theme = self.theme_combo.currentText().lower()
+        
         app_settings.set_display_scale(new_scale)
+        app_settings.set("theme", new_theme)
         app_settings.set("start_fullscreen", self.fullscreen_check.isChecked())
         app_settings.set("show_shortcuts", self.shortcuts_check.isChecked())
         app_settings.set("auto_timestamp", self.timestamp_check.isChecked())
@@ -162,6 +195,12 @@ class SettingsDialog(QDialog):
                 "Restart Required",
                 "Display scale has been changed. Please restart the application for the changes to take effect."
             )
+        
+        if old_theme != new_theme:
+            # Apply theme immediately
+            from ui.themes import get_theme_stylesheet
+            app = QApplication.instance()
+            app.setStyleSheet(get_theme_stylesheet(new_theme))
         
         self.accept()
     
@@ -176,6 +215,7 @@ class SettingsDialog(QDialog):
         
         if reply == QMessageBox.StandardButton.Yes:
             self.scale_slider.setValue(100)
+            self.theme_combo.setCurrentText("Dark")
             self.fullscreen_check.setChecked(True)
             self.shortcuts_check.setChecked(True)
             self.timestamp_check.setChecked(True)

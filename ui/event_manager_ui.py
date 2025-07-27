@@ -15,7 +15,13 @@ from logic.event_handler import (
 from database import get_log_details
 import sqlite3
 from database import DB_PATH
-from ui.styles import *
+from ui.styles import (
+    Fonts, Colors,
+    INPUT_STYLE, TABLE_STYLE, LIST_STYLE, DROPDOWN_STYLE,
+    get_button_style, make_accessible,
+    show_error, show_success
+)
+
 
 class EventChainEditDialog(QDialog):
     def __init__(self, event_id, current_title, current_description, parent=None):
@@ -143,13 +149,13 @@ class EventManager(QMainWindow):
         self.showMaximized()
         self.current_event_id = None
         
-        self.init_ui()
-        self.setup_shortcuts()
-        
         # Status bar
         self.status_bar = QStatusBar()
         self.setStatusBar(self.status_bar)
         self.status_bar.showMessage("Ready to manage event chains")
+        
+        self.init_ui()
+        self.setup_shortcuts()
 
     def init_ui(self):
         # Central widget

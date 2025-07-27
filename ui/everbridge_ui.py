@@ -7,7 +7,13 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QShortcut, QKeySequence
 from datetime import datetime
 from database import insert_everbridge_log
-from ui.styles import *
+from ui.styles import (
+    Fonts, Colors,
+    INPUT_STYLE, TABLE_STYLE, LIST_STYLE, DROPDOWN_STYLE,
+    get_button_style, make_accessible,
+    show_error, show_success
+)
+
 from config import SITE_CODES
 
 # Common Everbridge alert templates

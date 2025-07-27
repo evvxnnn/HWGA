@@ -24,8 +24,7 @@ class DragDropLabel(QLabel):
                 border: 3px dashed #2196F3;
                 border-radius: 15px;
                 padding: 40px;
-                background-color: #E3F2FD;
-                color: #1976D2;
+                background-color: rgba(33, 150, 243, 0.1);
                 font-size: 16px;
                 font-weight: bold;
             }
@@ -44,8 +43,7 @@ class DragDropLabel(QLabel):
                         border: 3px solid #4CAF50;
                         border-radius: 15px;
                         padding: 40px;
-                        background-color: #E8F5E9;
-                        color: #2E7D32;
+                        background-color: rgba(76, 175, 80, 0.2);
                         font-size: 16px;
                         font-weight: bold;
                     }
@@ -61,8 +59,7 @@ class DragDropLabel(QLabel):
                 border: 3px dashed #2196F3;
                 border-radius: 15px;
                 padding: 40px;
-                background-color: #E3F2FD;
-                color: #1976D2;
+                background-color: rgba(33, 150, 243, 0.1);
                 font-size: 16px;
                 font-weight: bold;
             }
@@ -113,7 +110,7 @@ class EmailPanel(QMainWindow):
         title_font = QFont("Arial", 24, QFont.Weight.Bold)
         title.setFont(title_font)
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        title.setStyleSheet("color: #1976D2; margin-bottom: 20px;")
+        title.setStyleSheet("margin-bottom: 20px;")
         layout.addWidget(title)
 
         # Tabs with larger font
