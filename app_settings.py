@@ -1,9 +1,13 @@
-# Application Settings for Security Ops Logger
-# Handles display scaling and user preferences
-
-import json
-import os
-from PyQt6.QtCore import QSettings
+from PyQt6.QtWidgets import (
+    QWidget, QVBoxLayout, QLabel, QComboBox, QLineEdit,
+    QPushButton, QHBoxLayout, QCheckBox, QMessageBox,
+    QMainWindow, QStatusBar, QGroupBox, QButtonGroup
+)
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QShortcut, QKeySequence
+from datetime import datetime
+from database import insert_radio_log
+from ui.styles import *
 
 class AppSettings:
     """Manage application settings and preferences"""

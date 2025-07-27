@@ -1,6 +1,6 @@
-from PyQt6.QtWidgets import QLabel, QMessageBox
+from PyQt6.QtWidgets import QApplication, QLabel, QMessageBox
 from PyQt6.QtCore import Qt, QTimer
-from PyQt6.QtGui import QFont, QShortcut, QApplication
+from PyQt6.QtGui import QFont
 from ui.home import HomeWindow
 from database import init_db
 from app_settings import apply_display_scaling, app_settings

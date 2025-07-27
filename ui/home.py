@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import (
-    QWidget, QPushButton, QVBoxLayout, QLabel, QShortcut,
+    QWidget, QPushButton, QVBoxLayout, QLabel,
     QMessageBox, QMainWindow, QStatusBar
 )
 from PyQt6.QtCore import Qt, QTimer
@@ -10,6 +10,8 @@ from ui.radio_ui import RadioPanel
 from ui.everbridge_ui import EverbridgePanel
 from ui.event_manager_ui import EventManager
 from ui.stats_ui import StatsPanel
+from ui.settings_dialog import SettingsDialog
+from app_settings import app_settings
 from datetime import datetime
 
 class HomeWindow(QMainWindow):
@@ -74,6 +76,7 @@ class HomeWindow(QMainWindow):
         layout.addWidget(log_label)
         
         # Button configuration with shortcuts
+        show_shortcuts = app_settings.get("show_shortcuts", True)
         button_config = {
             "Emails": ("📧 Emails", "F1", "#2196F3"),
             "Phone": ("📞 Phone Calls", "F2", "#4CAF50"),
@@ -83,7 +86,8 @@ class HomeWindow(QMainWindow):
         
         self.buttons = {}
         for key, (text, shortcut, color) in button_config.items():
-            btn = QPushButton(f"{text}\n({shortcut})")
+            btn_text = f"{text}\n({shortcut})" if show_shortcuts else text
+            btn = QPushButton(btn_text)
             btn.setFixedHeight(80)  # Larger buttons
             btn_font = QFont("Arial", 16)
             btn.setFont(btn_font)
@@ -115,7 +119,8 @@ class HomeWindow(QMainWindow):
         layout.addWidget(manage_label)
         
         # Event Manager button
-        self.event_manager_btn = QPushButton("🔗 Event Manager\n(F5)")
+        event_text = "🔗 Event Manager\n(F5)" if show_shortcuts else "🔗 Event Manager"
+        self.event_manager_btn = QPushButton(event_text)
         self.event_manager_btn.setFixedHeight(80)
         self.event_manager_btn.setFont(btn_font)
         self.event_manager_btn.setStyleSheet("""
@@ -137,7 +142,8 @@ class HomeWindow(QMainWindow):
         layout.addWidget(self.event_manager_btn)
         
         # Stats button
-        self.stats_btn = QPushButton("📊 Statistics & Reports\n(F6)")
+        stats_text = "📊 Statistics & Reports\n(F6)" if show_shortcuts else "📊 Statistics & Reports"
+        self.stats_btn = QPushButton(stats_text)
         self.stats_btn.setFixedHeight(80)
         self.stats_btn.setFont(btn_font)
         self.stats_btn.setStyleSheet("""
@@ -192,6 +198,13 @@ class HomeWindow(QMainWindow):
         # File menu
         file_menu = menubar.addMenu("&File")
         
+        settings_action = QAction("&Settings...", self)
+        settings_action.setShortcut("Ctrl+,")
+        settings_action.triggered.connect(self.show_settings)
+        file_menu.addAction(settings_action)
+        
+        file_menu.addSeparator()
+        
         exit_action = QAction("E&xit", self)
         exit_action.setShortcut("Ctrl+Q")
         exit_action.triggered.connect(self.close)
@@ -212,6 +225,10 @@ class HomeWindow(QMainWindow):
         shortcuts_action.setShortcut("Ctrl+H")
         shortcuts_action.triggered.connect(self.show_help)
         help_menu.addAction(shortcuts_action)
+        
+        about_action = QAction("&About", self)
+        about_action.triggered.connect(self.show_about)
+        help_menu.addAction(about_action)
 
     def toggle_fullscreen(self):
         if self.isFullScreen():
@@ -264,3 +281,46 @@ class HomeWindow(QMainWindow):
     def open_stats_panel(self):
         self.stats_window = StatsPanel()
         self.stats_window.show()
+    
+    def show_settings(self):
+        """Show settings dialog"""
+        dialog = SettingsDialog(self)
+        dialog.exec()
+    
+    def show_about(self):
+        """Show about dialog"""
+        about_text = """
+        <h2>Security Operations Logger</h2>
+        <p>Version 2.0</p>
+        <p>A comprehensive logging system for security operations centers.</p>
+        <br>
+        <p><b>Features:</b></p>
+        <ul>
+        <li>Email, Phone, Radio, and Everbridge logging</li>
+        <li>Event chain management</li>
+        <li>Response time analytics</li>
+        <li>Full keyboard navigation</li>
+        <li>Customizable display scaling</li>
+        </ul>
+        <br>
+        <p>Designed for ease of use by all operators.</p>
+        """
+        QMessageBox.about(self, "About Security Ops Logger", about_text)
+    
+    def closeEvent(self, event):
+        """Handle window close event"""
+        if app_settings.get("confirm_exit", True):
+            reply = QMessageBox.question(
+                self,
+                "Confirm Exit",
+                "Are you sure you want to exit?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No
+            )
+            
+            if reply == QMessageBox.StandardButton.Yes:
+                event.accept()
+            else:
+                event.ignore()
+        else:
+            event.accept()
