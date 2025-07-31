@@ -1,0 +1,3 @@
+2025-07-31 06:35:16,008 - __main__ - INFO - Security Ops Logger starting up
+2025-07-31 06:35:16,284 - database - INFO - Database initialized successfully and indexes created
+2025-07-31 06:35:50,994 - __main__ - INFO - Security Ops Logger closed

@@ -4,8 +4,13 @@
 import json
 import os
 
+from logger import get_logger
+
 # Don't import Qt-related items at module level to avoid initialization issues
 app_settings = None
+
+# Module-level logger for settings persistence
+logger = get_logger(__name__)
 
 class AppSettings:
     """Manage application settings and preferences"""
@@ -31,21 +36,24 @@ class AppSettings:
         
         if os.path.exists(self.config_file):
             try:
-                with open(self.config_file, 'r') as f:
+                with open(self.config_file, 'r', encoding='utf-8') as f:
                     saved = json.load(f)
                     defaults.update(saved)
-            except:
-                pass
+            except Exception as exc:
+                # Log but continue with defaults
+                logger.warning(
+                    "Failed to load user preferences from %s: %s", self.config_file, exc
+                )
         
         self.preferences = defaults
     
     def save_settings(self):
         """Save current settings to file"""
         try:
-            with open(self.config_file, 'w') as f:
+            with open(self.config_file, 'w', encoding='utf-8') as f:
                 json.dump(self.preferences, f, indent=2)
-        except:
-            pass
+        except Exception as exc:
+            logger.warning("Failed to save user preferences to %s: %s", self.config_file, exc)
     
     def get(self, key, default=None):
         """Get a setting value"""

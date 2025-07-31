@@ -4,6 +4,7 @@ from PyQt6.QtGui import QFont
 from ui.home import HomeWindow
 from database import init_db
 from app_settings import apply_display_scaling, app_settings
+from logger import get_logger
 import sys
 import os
 
@@ -40,6 +41,26 @@ def show_splash():
 def main():
     # Create application
     app = QApplication(sys.argv)
+
+    # Initialize logger and log application start
+    logger = get_logger(__name__)
+    logger.info("Security Ops Logger starting up")
+
+    # Install a global exception hook to log uncaught exceptions. Without
+    # this, unexpected errors may silently crash the application. The
+    # handler forwards keyboard interrupts to the default handler so
+    # they can still terminate the program normally.
+    def handle_exception(exc_type, exc_value, exc_traceback):
+        if issubclass(exc_type, KeyboardInterrupt):
+            sys.__excepthook__(exc_type, exc_value, exc_traceback)
+            return
+        # Log the exception with full traceback
+        logger.exception("Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback))
+        # Show a user-friendly error dialog
+        from PyQt6.QtWidgets import QMessageBox
+        QMessageBox.critical(None, "Application Error",
+                             f"An unexpected error occurred:\n\n{exc_value}")
+    sys.excepthook = handle_exception
     
     # Set application properties
     app.setApplicationName("Security Ops Logger")
@@ -90,6 +111,9 @@ def main():
     
     sys.exit(app.exec())
 
+    # Log shutdown event (this line may never execute if sys.exit terminates)
+    logger.info("Security Ops Logger exited")
+
 def handle_exit(window):
     """Handle application exit"""
     # Save window geometry
@@ -97,7 +121,9 @@ def handle_exit(window):
     save_window_geometry("main", window.geometry())
     
     # Any other cleanup
-    print("Security Ops Logger closed")
+    # Log exit event
+    logger = get_logger(__name__)
+    logger.info("Security Ops Logger closed")
 
 if __name__ == "__main__":
     main()

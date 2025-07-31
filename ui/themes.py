@@ -108,6 +108,12 @@ QTableWidget::item {
     padding: 8px;
 }
 
+/* Ensure alternate rows maintain dark background in dark mode */
+QTableWidget::item:alternate {
+    background-color: #252526;
+    color: #ffffff;
+}
+
 QTableWidget::item:selected {
     background-color: #007ACC;
     color: #ffffff;
