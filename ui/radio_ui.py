@@ -13,9 +13,11 @@ from ui.styles import (
     get_button_style, make_accessible,
     show_error, show_success
 )
+from app_settings import app_settings
 
 
-UNITS = {
+# Default units and locations - can be customized in settings
+DEFAULT_UNITS = {
     "Unit 21": ["AEI The Rock", "Andrews", "Breeden Lot", "CCDC", "CEP", "CEP - Bldg 60", "CEP - Gate 1", "CEP - Gate 7", "CEP - Gate 82", "CEP - Gate 96", "City PG", "COB", "COB - CSOC", "COB Brown St. Lot", "Cole PG", "COM", "CSS", "CTC", "FSP", "Hangar", "IOB", "Lionbridge", "Skooters", "SMC", "SSC", "Union Hall/Reeves"],
     "Unit 22": ["AEI The Rock", "Andrews", "Breeden Lot", "CCDC", "CEP", "CEP - Bldg 60", "CEP - Gate 1", "CEP - Gate 7", "CEP - Gate 82", "CEP - Gate 96", "City PG", "COB", "COB - CSOC", "COB Brown St. Lot", "Cole PG", "COM", "CSS", "CTC", "FSP", "Hangar", "IOB", "Lionbridge", "Skooters", "SMC", "SSC", "Union Hall/Reeves"],
     "Unit 31": ["AEI The Rock", "Andrews", "Breeden Lot", "CCDC", "CEP", "CEP - Bldg 60", "CEP - Gate 1", "CEP - Gate 7", "CEP - Gate 82", "CEP - Gate 96", "City PG", "COB", "COB - CSOC", "COB Brown St. Lot", "Cole PG", "COM", "CSS", "CTC", "FSP", "Hangar", "IOB", "Lionbridge", "Skooters", "SMC", "SSC", "Union Hall/Reeves"],
@@ -24,7 +26,10 @@ UNITS = {
     "Unit 42": ["CEP", "CEP - Gate 7", "CMEP", "CMIC", "COB", "COB - CSOC", "CESC", "OLY", "SEMI", "SEP", "SILC", "Test Track", "WSS"]
 }
 
-REASONS = [
+# Keep UNITS for backward compatibility and settings dialog
+UNITS = DEFAULT_UNITS
+
+DEFAULT_REASONS = [
     "Routine Patrol",
     "Suspicious Activity",
     "Access Control Check",
@@ -36,12 +41,28 @@ REASONS = [
     "Special Assignment"
 ]
 
+# Keep REASONS for backward compatibility
+REASONS = DEFAULT_REASONS
+
+# Get units from settings or use defaults
+def get_radio_units():
+    dropdown_options = app_settings.get("dropdown_options", {})
+    return dropdown_options.get("radio_unit_locations", DEFAULT_UNITS)
+
+# Get reasons from settings or use defaults
+def get_radio_reasons():
+    dropdown_options = app_settings.get("dropdown_options", {})
+    return dropdown_options.get("radio_reasons", DEFAULT_REASONS)
+
 class RadioPanel(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Radio Dispatch Log Entry")
         self.setMinimumSize(900, 700)
         self.showMaximized()
+        
+        self.units = get_radio_units()  # Get from settings
+        self.reasons = get_radio_reasons()  # Get from settings
         
         self.init_ui()
         self.setup_shortcuts()
@@ -85,7 +106,13 @@ class RadioPanel(QMainWindow):
         """)
         time_layout = QHBoxLayout()
         
-        self.timestamp_field = QLineEdit(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        # Auto-fill timestamp if enabled in settings
+        if app_settings.get("auto_timestamp", True):
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        else:
+            timestamp = ""
+        
+        self.timestamp_field = QLineEdit(timestamp)
         self.timestamp_field.setFont(Fonts.NORMAL)
         self.timestamp_field.setStyleSheet(INPUT_STYLE)
         self.timestamp_field.setMinimumHeight(45)
@@ -110,7 +137,7 @@ class RadioPanel(QMainWindow):
         unit_layout.addWidget(unit_label)
         
         self.unit_dropdown = QComboBox()
-        self.unit_dropdown.addItems(UNITS.keys())
+        self.unit_dropdown.addItems(self.units.keys())
         self.unit_dropdown.setFont(Fonts.NORMAL)
         self.unit_dropdown.setStyleSheet(DROPDOWN_STYLE)
         self.unit_dropdown.setMinimumHeight(45)
@@ -145,7 +172,7 @@ class RadioPanel(QMainWindow):
         reason_layout.addWidget(reason_label)
         
         self.reason_dropdown = QComboBox()
-        self.reason_dropdown.addItems(REASONS)
+        self.reason_dropdown.addItems(self.reasons)
         self.reason_dropdown.setFont(Fonts.NORMAL)
         self.reason_dropdown.setStyleSheet(DROPDOWN_STYLE)
         self.reason_dropdown.setMinimumHeight(45)
@@ -285,7 +312,7 @@ class RadioPanel(QMainWindow):
     def update_locations(self):
         unit = self.unit_dropdown.currentText()
         self.location_dropdown.clear()
-        self.location_dropdown.addItems(UNITS.get(unit, []))
+        self.location_dropdown.addItems(self.units.get(unit, []))
 
     def set_status(self, arrived, departed):
         """Quick set status checkboxes"""

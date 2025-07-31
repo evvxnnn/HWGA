@@ -23,6 +23,16 @@ def show_splash():
         }
     """)
     splash_widget.setMinimumSize(600, 400)
+    
+    # Center on screen
+    from PyQt6.QtWidgets import QApplication
+    screen = QApplication.primaryScreen()
+    if screen:
+        screen_geometry = screen.geometry()
+        x = (screen_geometry.width() - splash_widget.width()) // 2
+        y = (screen_geometry.height() - splash_widget.height()) // 2
+        splash_widget.move(x, y)
+    
     splash_widget.show()
     
     return splash_widget
@@ -38,36 +48,20 @@ def main():
     # Apply display scaling
     apply_display_scaling(app)
     
-    # Set global application style
+    # Set global application style FIRST
     app.setStyle("Fusion")  # Modern look across platforms
-    
-    # Global stylesheet for consistent look
-    app.setStyleSheet("""
-        QMainWindow {
-            background-color: #FAFAFA;
-        }
-        QWidget {
-            font-family: Arial, sans-serif;
-        }
-        QMessageBox {
-            background-color: white;
-        }
-        QMessageBox QPushButton {
-            min-width: 100px;
-            min-height: 40px;
-            font-size: 14px;
-        }
-        QToolTip {
-            background-color: #1976D2;
-            color: white;
-            border: none;
-            padding: 8px;
-            font-size: 14px;
-        }
-    """)
     
     # Show splash screen
     splash = show_splash()
+    app.processEvents()
+    
+    # Apply theme AFTER style is set and Qt is initialized
+    from ui.themes import get_theme_stylesheet
+    theme = app_settings.get("theme", "dark")
+    stylesheet = get_theme_stylesheet(theme)
+    app.setStyleSheet(stylesheet)
+    
+    # Force processing of style changes
     app.processEvents()
     
     # Ensure data directory exists

@@ -167,16 +167,7 @@ def show_success(parent, message):
     msg.setWindowTitle("Success")
     msg.setText(message)
     msg.setFont(Fonts.NORMAL)
-    msg.setStyleSheet("""
-        QMessageBox {
-            background-color: white;
-        }
-        QPushButton {
-            min-width: 100px;
-            min-height: 40px;
-            font-size: 14px;
-        }
-    """)
+    # Don't override theme styling for message boxes
     msg.exec()
 
 def show_error(parent, message):
@@ -187,16 +178,7 @@ def show_error(parent, message):
     msg.setWindowTitle("Error")
     msg.setText(message)
     msg.setFont(Fonts.NORMAL)
-    msg.setStyleSheet("""
-        QMessageBox {
-            background-color: white;
-        }
-        QPushButton {
-            min-width: 100px;
-            min-height: 40px;
-            font-size: 14px;
-        }
-    """)
+    # Don't override theme styling for message boxes
     msg.exec()
 
 # Dropdown/ComboBox styles

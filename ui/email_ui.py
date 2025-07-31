@@ -1,13 +1,20 @@
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QLabel, QPushButton, QTabWidget,
     QFileDialog, QLineEdit, QTextEdit, QMessageBox, QMainWindow,
-    QStatusBar
+    QStatusBar, QComboBox
 )
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QDragEnterEvent, QDropEvent, QFont, QShortcut, QKeySequence
 from msg_parser import parse_msg
 from database import insert_email_log
 from datetime import datetime
+from app_settings import app_settings
+from config import SITE_CODES as DEFAULT_SITE_CODES
+
+# Get site codes from settings or use defaults
+def get_site_codes():
+    dropdown_options = app_settings.get("dropdown_options", {})
+    return dropdown_options.get("site_codes", DEFAULT_SITE_CODES)
 
 EMAIL_TABS = [
     "Data Request", "Incident Report", "Muster Report",
@@ -231,7 +238,7 @@ class EmailPanel(QMainWindow):
         elif tab_name == "Incident Report":
             self.add_line_edit("Incident Number", label_style)
         elif tab_name == "Muster Report":
-            self.add_line_edit("Site Code", label_style)
+            self.add_site_code_dropdown("Site Code", label_style)
         elif tab_name == "Everbridge Alert":
             self.add_text_edit("Message", label_style)
         elif tab_name in ["Badge Deactivation", "Parking Tag App", "Other"]:
@@ -304,6 +311,44 @@ class EmailPanel(QMainWindow):
         box.setPlaceholderText(f"Enter {label_text}")
         self.fields_layout.addWidget(box)
         self.dynamic_fields[label_text] = box
+    
+    def add_site_code_dropdown(self, label_text, label_style=""):
+        """Add a dropdown for site codes that's editable"""
+        label = QLabel(label_text)
+        label.setStyleSheet(label_style)
+        self.fields_layout.addWidget(label)
+        
+        dropdown = QComboBox()
+        dropdown.setEditable(True)  # Allow custom entries
+        dropdown.addItems(get_site_codes())
+        dropdown.setFont(QFont("Arial", 14))
+        dropdown.setStyleSheet("""
+            QComboBox {
+                padding: 10px;
+                border: 2px solid #2196F3;
+                border-radius: 5px;
+                min-height: 40px;
+            }
+            QComboBox:focus {
+                border: 2px solid #1976D2;
+                background-color: #E3F2FD;
+            }
+            QComboBox::drop-down {
+                width: 30px;
+            }
+            QComboBox::down-arrow {
+                width: 12px;
+                height: 12px;
+            }
+            QComboBox QAbstractItemView {
+                font-size: 14px;
+                padding: 5px;
+            }
+        """)
+        dropdown.setPlaceholderText(f"Select or enter {label_text}")
+        self.fields_layout.addWidget(dropdown)
+        self.dynamic_fields[label_text] = dropdown
+        return dropdown
 
     def make_fields_editable(self):
         """Make meta fields editable for manual entry"""
@@ -429,7 +474,12 @@ class EmailPanel(QMainWindow):
         for key in self.dynamic_fields:
             if key not in ["Recipient Name"]:
                 field = self.dynamic_fields[key]
-                extra_field = field.toPlainText() if isinstance(field, QTextEdit) else field.text()
+                if isinstance(field, QTextEdit):
+                    extra_field = field.toPlainText()
+                elif isinstance(field, QComboBox):
+                    extra_field = field.currentText()
+                else:
+                    extra_field = field.text()
                 break
 
         insert_email_log(log_type, sender, recipient, subject, timestamp, extra_field, msg_path)

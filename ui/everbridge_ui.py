@@ -13,8 +13,13 @@ from ui.styles import (
     get_button_style, make_accessible,
     show_error, show_success
 )
+from app_settings import app_settings
+from config import SITE_CODES as DEFAULT_SITE_CODES
 
-from config import SITE_CODES
+# Get site codes from settings or use defaults
+def get_site_codes():
+    dropdown_options = app_settings.get("dropdown_options", {})
+    return dropdown_options.get("site_codes", DEFAULT_SITE_CODES)
 
 # Common Everbridge alert templates
 ALERT_TEMPLATES = {
@@ -90,7 +95,13 @@ class EverbridgePanel(QMainWindow):
         """)
         time_layout = QHBoxLayout()
         
-        self.timestamp_field = QLineEdit(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        # Auto-fill timestamp if enabled in settings
+        if app_settings.get("auto_timestamp", True):
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        else:
+            timestamp = ""
+        
+        self.timestamp_field = QLineEdit(timestamp)
         self.timestamp_field.setFont(Fonts.NORMAL)
         self.timestamp_field.setStyleSheet(INPUT_STYLE)
         self.timestamp_field.setMinimumHeight(45)
@@ -116,7 +127,11 @@ class EverbridgePanel(QMainWindow):
         
         self.site_code_field = QComboBox()
         self.site_code_field.setEditable(True)
-        self.site_code_field.addItems(SITE_CODES)
+        self.site_code_field.addItems(get_site_codes())
+        # Set default site if configured
+        default_site = app_settings.get("default_site", "")
+        if default_site:
+            self.site_code_field.setCurrentText(default_site)
         self.site_code_field.setFont(Fonts.NORMAL)
         self.site_code_field.setStyleSheet(DROPDOWN_STYLE)
         self.site_code_field.setMinimumHeight(45)

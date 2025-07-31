@@ -1,12 +1,11 @@
 from PyQt6.QtWidgets import (
-    QWidget,     # ← add this
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, 
     QPushButton, QSlider, QCheckBox, QGroupBox,
     QComboBox, QLineEdit, QDialogButtonBox,
     QMessageBox, QApplication, QTabWidget,
-    QListWidget, QTextEdit, QListWidgetItem
+    QListWidget, QTextEdit, QListWidgetItem,
+    QWidget, QSplitter
 )
-
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont
 from app_settings import app_settings
@@ -83,6 +82,10 @@ class DropdownCustomizationWidget(QWidget):
         if text:
             self.list_widget.addItem(text)
             self.new_item_input.clear()
+            # Select the new item
+            items = self.list_widget.findItems(text, Qt.MatchFlag.MatchExactly)
+            if items:
+                self.list_widget.setCurrentItem(items[0])
     
     def remove_item(self):
         current_row = self.list_widget.currentRow()
@@ -105,6 +108,176 @@ class DropdownCustomizationWidget(QWidget):
     
     def get_items(self):
         return [self.list_widget.item(i).text() for i in range(self.list_widget.count())]
+
+class UnitLocationWidget(QWidget):
+    """Widget for managing unit-location mappings"""
+    def __init__(self, unit_locations, parent=None):
+        super().__init__(parent)
+        self.Fonts = get_styles()
+        self.unit_locations = unit_locations.copy()
+        
+        layout = QHBoxLayout()
+        
+        # Left side - Units list
+        left_layout = QVBoxLayout()
+        left_label = QLabel("Units")
+        left_label.setFont(self.Fonts.LABEL)
+        left_layout.addWidget(left_label)
+        
+        self.units_list = QListWidget()
+        self.units_list.setFont(self.Fonts.NORMAL)
+        self.units_list.addItems(sorted(self.unit_locations.keys()))
+        self.units_list.currentItemChanged.connect(self.on_unit_changed)
+        self.units_list.setMaximumWidth(200)
+        left_layout.addWidget(self.units_list)
+        
+        # Unit controls
+        unit_controls = QHBoxLayout()
+        
+        self.new_unit_input = QLineEdit()
+        self.new_unit_input.setPlaceholderText("New unit name...")
+        unit_controls.addWidget(self.new_unit_input)
+        
+        add_unit_btn = QPushButton("Add Unit")
+        add_unit_btn.clicked.connect(self.add_unit)
+        unit_controls.addWidget(add_unit_btn)
+        
+        remove_unit_btn = QPushButton("Remove Unit")
+        remove_unit_btn.clicked.connect(self.remove_unit)
+        unit_controls.addWidget(remove_unit_btn)
+        
+        left_layout.addLayout(unit_controls)
+        
+        # Right side - Locations for selected unit
+        right_layout = QVBoxLayout()
+        self.locations_label = QLabel("Locations for Unit")
+        self.locations_label.setFont(self.Fonts.LABEL)
+        right_layout.addWidget(self.locations_label)
+        
+        self.locations_list = QListWidget()
+        self.locations_list.setFont(self.Fonts.NORMAL)
+        right_layout.addWidget(self.locations_list)
+        
+        # Location controls
+        location_controls = QHBoxLayout()
+        
+        self.new_location_input = QLineEdit()
+        self.new_location_input.setPlaceholderText("New location...")
+        location_controls.addWidget(self.new_location_input)
+        
+        add_location_btn = QPushButton("Add")
+        add_location_btn.clicked.connect(self.add_location)
+        location_controls.addWidget(add_location_btn)
+        
+        remove_location_btn = QPushButton("Remove")
+        remove_location_btn.clicked.connect(self.remove_location)
+        location_controls.addWidget(remove_location_btn)
+        
+        up_btn = QPushButton("↑")
+        up_btn.clicked.connect(self.move_location_up)
+        location_controls.addWidget(up_btn)
+        
+        down_btn = QPushButton("↓")
+        down_btn.clicked.connect(self.move_location_down)
+        location_controls.addWidget(down_btn)
+        
+        right_layout.addLayout(location_controls)
+        
+        # Add layouts to main
+        layout.addLayout(left_layout)
+        layout.addLayout(right_layout)
+        
+        self.setLayout(layout)
+        
+        # Select first unit
+        if self.units_list.count() > 0:
+            self.units_list.setCurrentRow(0)
+    
+    def on_unit_changed(self, current, previous):
+        if current:
+            unit = current.text()
+            self.locations_label.setText(f"Locations for {unit}")
+            self.locations_list.clear()
+            self.locations_list.addItems(self.unit_locations.get(unit, []))
+    
+    def add_unit(self):
+        unit_name = self.new_unit_input.text().strip()
+        if unit_name and unit_name not in self.unit_locations:
+            self.unit_locations[unit_name] = []
+            self.units_list.addItem(unit_name)
+            self.new_unit_input.clear()
+            # Select the new unit
+            items = self.units_list.findItems(unit_name, Qt.MatchFlag.MatchExactly)
+            if items:
+                self.units_list.setCurrentItem(items[0])
+    
+    def remove_unit(self):
+        current_item = self.units_list.currentItem()
+        if current_item:
+            unit = current_item.text()
+            reply = QMessageBox.question(
+                self,
+                "Remove Unit",
+                f"Remove {unit} and all its locations?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            )
+            if reply == QMessageBox.StandardButton.Yes:
+                del self.unit_locations[unit]
+                self.units_list.takeItem(self.units_list.currentRow())
+    
+    def add_location(self):
+        current_unit = self.units_list.currentItem()
+        if current_unit:
+            location = self.new_location_input.text().strip()
+            if location:
+                unit = current_unit.text()
+                if unit not in self.unit_locations:
+                    self.unit_locations[unit] = []
+                self.unit_locations[unit].append(location)
+                self.locations_list.addItem(location)
+                self.new_location_input.clear()
+                # Select the new location
+                items = self.locations_list.findItems(location, Qt.MatchFlag.MatchExactly)
+                if items:
+                    self.locations_list.setCurrentItem(items[0])
+    
+    def remove_location(self):
+        current_unit = self.units_list.currentItem()
+        current_location_row = self.locations_list.currentRow()
+        
+        if current_unit and current_location_row >= 0:
+            unit = current_unit.text()
+            self.unit_locations[unit].pop(current_location_row)
+            self.locations_list.takeItem(current_location_row)
+    
+    def move_location_up(self):
+        current_unit = self.units_list.currentItem()
+        current_row = self.locations_list.currentRow()
+        
+        if current_unit and current_row > 0:
+            unit = current_unit.text()
+            locations = self.unit_locations[unit]
+            locations[current_row], locations[current_row - 1] = locations[current_row - 1], locations[current_row]
+            
+            item = self.locations_list.takeItem(current_row)
+            self.locations_list.insertItem(current_row - 1, item)
+            self.locations_list.setCurrentRow(current_row - 1)
+    
+    def move_location_down(self):
+        current_unit = self.units_list.currentItem()
+        current_row = self.locations_list.currentRow()
+        
+        if current_unit and current_row < self.locations_list.count() - 1:
+            unit = current_unit.text()
+            locations = self.unit_locations[unit]
+            locations[current_row], locations[current_row + 1] = locations[current_row + 1], locations[current_row]
+            
+            item = self.locations_list.takeItem(current_row)
+            self.locations_list.insertItem(current_row + 1, item)
+            self.locations_list.setCurrentRow(current_row + 1)
+    
+    def get_unit_locations(self):
+        return self.unit_locations
 
 class SettingsDialog(QDialog):
     def __init__(self, parent=None):
@@ -319,7 +492,7 @@ class SettingsDialog(QDialog):
         layout.setSpacing(15)
         
         # Info
-        info = QLabel("Customize dropdown options for different log types")
+        info = QLabel("Customize dropdown options for different log types.\nChanges apply immediately after saving.")
         info.setFont(self.Fonts.NORMAL)
         info.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(info)
@@ -327,21 +500,29 @@ class SettingsDialog(QDialog):
         # Load current dropdown values
         dropdown_settings = app_settings.get("dropdown_options", {})
         
-        # Site codes
+        # Site codes - used globally across panels
         from config import SITE_CODES
         current_sites = dropdown_settings.get("site_codes", SITE_CODES)
         self.site_codes_widget = DropdownCustomizationWidget(
-            "Site Codes", "site_codes", current_sites
+            "Site Codes (used in Phone, Everbridge, and other panels)", 
+            "site_codes", 
+            current_sites
         )
         layout.addWidget(self.site_codes_widget)
         
-        # Radio units
-        from ui.radio_ui import UNITS
-        current_units = dropdown_settings.get("radio_units", list(UNITS.keys()))
-        self.radio_units_widget = DropdownCustomizationWidget(
-            "Radio Units", "radio_units", current_units
-        )
-        layout.addWidget(self.radio_units_widget)
+        # Radio unit-location mappings
+        from ui.radio_ui import DEFAULT_UNITS
+        current_unit_locations = dropdown_settings.get("radio_unit_locations", DEFAULT_UNITS)
+        
+        unit_group = QGroupBox("Radio Unit Location Assignments")
+        unit_group.setFont(self.Fonts.LABEL)
+        unit_layout = QVBoxLayout()
+        
+        self.unit_locations_widget = UnitLocationWidget(current_unit_locations)
+        unit_layout.addWidget(self.unit_locations_widget)
+        
+        unit_group.setLayout(unit_layout)
+        layout.addWidget(unit_group)
         
         # Radio reasons
         from ui.radio_ui import REASONS
@@ -352,8 +533,8 @@ class SettingsDialog(QDialog):
         layout.addWidget(self.radio_reasons_widget)
         
         # Phone call types
-        from ui.phone_ui import CALL_TYPES
-        current_call_types = dropdown_settings.get("phone_call_types", CALL_TYPES)
+        from ui.phone_ui import DEFAULT_CALL_TYPES
+        current_call_types = dropdown_settings.get("phone_call_types", DEFAULT_CALL_TYPES)
         self.call_types_widget = DropdownCustomizationWidget(
             "Phone Call Types", "phone_call_types", current_call_types
         )
@@ -431,7 +612,7 @@ class SettingsDialog(QDialog):
         # Save dropdown options
         dropdown_options = {
             "site_codes": self.site_codes_widget.get_items(),
-            "radio_units": self.radio_units_widget.get_items(),
+            "radio_unit_locations": self.unit_locations_widget.get_unit_locations(),
             "radio_reasons": self.radio_reasons_widget.get_items(),
             "phone_call_types": self.call_types_widget.get_items()
         }
@@ -474,18 +655,22 @@ class SettingsDialog(QDialog):
             
             # Reset dropdown options to defaults
             from config import SITE_CODES
-            from ui.radio_ui import UNITS, REASONS
-            from ui.phone_ui import CALL_TYPES
+            from ui.radio_ui import DEFAULT_UNITS, REASONS
+            from ui.phone_ui import DEFAULT_CALL_TYPES
             
             # Clear and repopulate lists
             self.site_codes_widget.list_widget.clear()
             self.site_codes_widget.list_widget.addItems(SITE_CODES)
             
-            self.radio_units_widget.list_widget.clear()
-            self.radio_units_widget.list_widget.addItems(list(UNITS.keys()))
+            # Reset unit locations
+            self.unit_locations_widget.unit_locations = DEFAULT_UNITS.copy()
+            self.unit_locations_widget.units_list.clear()
+            self.unit_locations_widget.units_list.addItems(sorted(DEFAULT_UNITS.keys()))
+            if self.unit_locations_widget.units_list.count() > 0:
+                self.unit_locations_widget.units_list.setCurrentRow(0)
             
             self.radio_reasons_widget.list_widget.clear()
             self.radio_reasons_widget.list_widget.addItems(REASONS)
             
             self.call_types_widget.list_widget.clear()
-            self.call_types_widget.list_widget.addItems(CALL_TYPES)
+            self.call_types_widget.list_widget.addItems(DEFAULT_CALL_TYPES)

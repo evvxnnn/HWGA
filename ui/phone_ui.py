@@ -13,12 +13,25 @@ from ui.styles import (
     get_button_style, make_accessible,
     show_error, show_success
 )
+from app_settings import app_settings
+from config import SITE_CODES as DEFAULT_SITE_CODES
 
 
-CALL_TYPES = [
+# Default call types - can be customized in settings
+DEFAULT_CALL_TYPES = [
     "Everbridge", "Incident Report", "Ongoing Incident",
     "Alarm Monitor Center", "Facilities", "On-Call Tech", "Other"
 ]
+
+# Get call types from settings or use defaults
+def get_call_types():
+    dropdown_options = app_settings.get("dropdown_options", {})
+    return dropdown_options.get("phone_call_types", DEFAULT_CALL_TYPES)
+
+# Get site codes from settings or use defaults
+def get_site_codes():
+    dropdown_options = app_settings.get("dropdown_options", {})
+    return dropdown_options.get("site_codes", DEFAULT_SITE_CODES)
 
 # Customizable options for Facilities calls
 ISSUE_TYPES = {
@@ -42,7 +55,8 @@ class PhonePanel(QMainWindow):
         self.setMinimumSize(900, 800)
         self.showMaximized()
         
-        self.current_call_type = CALL_TYPES[0]
+        self.call_types = get_call_types()  # Get from settings
+        self.current_call_type = self.call_types[0]
         self.fields = {}
 
         self.init_ui()
@@ -80,7 +94,7 @@ class PhonePanel(QMainWindow):
         dropdown_layout.addWidget(dropdown_label)
         
         self.call_type_dropdown = QComboBox()
-        self.call_type_dropdown.addItems(CALL_TYPES)
+        self.call_type_dropdown.addItems(self.call_types)
         self.call_type_dropdown.setFont(Fonts.NORMAL)
         self.call_type_dropdown.setStyleSheet(DROPDOWN_STYLE)
         self.call_type_dropdown.currentIndexChanged.connect(self.switch_call_type)
@@ -95,7 +109,13 @@ class PhonePanel(QMainWindow):
         time_label.setFont(Fonts.LABEL)
         time_layout.addWidget(time_label)
         
-        self.timestamp_field = QLineEdit(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        # Auto-fill timestamp if enabled in settings
+        if app_settings.get("auto_timestamp", True):
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        else:
+            timestamp = ""
+        
+        self.timestamp_field = QLineEdit(timestamp)
         self.timestamp_field.setFont(Fonts.NORMAL)
         self.timestamp_field.setStyleSheet(INPUT_STYLE)
         make_accessible(self.timestamp_field, "Enter the time of the call")
@@ -138,7 +158,7 @@ class PhonePanel(QMainWindow):
         self.status_bar.showMessage("Timestamp updated to current time")
 
     def switch_call_type(self, index):
-        self.current_call_type = CALL_TYPES[index]
+        self.current_call_type = self.call_types[index]
         self.clear_fields()
         self.populate_fields(self.current_call_type)
         self.status_bar.showMessage(f"Call type: {self.current_call_type}")
@@ -156,13 +176,13 @@ class PhonePanel(QMainWindow):
             self.add_line_edit("Message", "Brief message or alert details")
         elif call_type == "Incident Report":
             self.add_line_edit("Caller Name", "Name of the person reporting")
-            self.add_line_edit("Site Code", "Location code (e.g., MAIN, DC1)")
+            self.add_site_code_dropdown("Site Code", "Location code (e.g., MAIN, DC1)")
             self.add_line_edit("Incident Report Number", "Incident tracking number")
         elif call_type == "Ongoing Incident":
             self.add_line_edit("Caller Name", "Name of the person calling")
-            self.add_line_edit("Site Code", "Location code")
+            self.add_site_code_dropdown("Site Code", "Location code")
         elif call_type == "Alarm Monitor Center":
-            self.add_line_edit("Site Code", "Location code")
+            self.add_site_code_dropdown("Site Code", "Location code")
             self.add_line_edit("Address", "Physical address of alarm")
             self.add_line_edit("Alarm Type", "Type of alarm triggered")
         elif call_type == "Facilities":
@@ -184,7 +204,7 @@ class PhonePanel(QMainWindow):
             )
             self.update_subtypes()  # Initialize with first type's subtypes
             
-            self.add_line_edit("Site Code", "Location code")
+            self.add_site_code_dropdown("Site Code", "Location code")
             self.add_line_edit("Location in Site", "Specific location within the site")
             self.add_text_edit("Additional Info", "Any additional details", height=100)
         elif call_type == "On-Call Tech":
@@ -234,6 +254,22 @@ class PhonePanel(QMainWindow):
         self.fields_layout.addWidget(dropdown)
         self.fields[label_text] = dropdown
         return dropdown
+    
+    def add_site_code_dropdown(self, label_text, tooltip):
+        """Add a dropdown for site codes that's editable"""
+        label = QLabel(label_text + ":")
+        label.setFont(Fonts.LABEL)
+        self.fields_layout.addWidget(label)
+        
+        dropdown = QComboBox()
+        dropdown.setEditable(True)  # Allow custom entries
+        dropdown.addItems(get_site_codes())
+        dropdown.setFont(Fonts.NORMAL)
+        dropdown.setStyleSheet(DROPDOWN_STYLE)
+        make_accessible(dropdown, tooltip)
+        self.fields_layout.addWidget(dropdown)
+        self.fields[label_text] = dropdown
+        return dropdown
 
     def update_subtypes(self):
         if hasattr(self, 'issue_type_dropdown') and hasattr(self, 'issue_subtype_dropdown'):
@@ -256,6 +292,7 @@ class PhonePanel(QMainWindow):
             elif isinstance(f, QTextEdit):
                 data[k] = f.toPlainText()
             elif isinstance(f, QComboBox):
+                # For editable combo boxes, get the current text
                 data[k] = f.currentText()
         
         call_type = self.current_call_type

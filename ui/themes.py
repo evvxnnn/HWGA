@@ -315,9 +315,26 @@ QMessageBox {
     color: #ffffff;
 }
 
+QMessageBox QLabel {
+    color: #ffffff;
+}
+
 QMessageBox QPushButton {
+    background-color: #2d2d30;
+    color: #ffffff;
+    border: 1px solid #3e3e42;
+    padding: 8px 16px;
     min-width: 80px;
     min-height: 30px;
+}
+
+QMessageBox QPushButton:hover {
+    background-color: #3e3e42;
+    border: 1px solid #007ACC;
+}
+
+QMessageBox QPushButton:pressed {
+    background-color: #007ACC;
 }
 
 /* Dialog */
@@ -335,23 +352,10 @@ QSplitter::handle:hover {
     background-color: #007ACC;
 }
 
-/* Slider */
-QSlider::groove:horizontal {
-    background-color: #2d2d30;
-    height: 6px;
-    border-radius: 3px;
-}
-
-QSlider::handle:horizontal {
-    background-color: #007ACC;
-    width: 16px;
-    height: 16px;
-    margin: -5px 0;
-    border-radius: 8px;
-}
-
-QSlider::handle:horizontal:hover {
-    background-color: #1ba1e2;
+/* Specific button overrides for colored buttons */
+QPushButton[style*="background-color"] {
+    /* This ensures colored buttons keep their custom colors */
+    color: white !important;
 }
 """
 

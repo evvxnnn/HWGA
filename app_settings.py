@@ -25,7 +25,8 @@ class AppSettings:
             "auto_timestamp": True,
             "confirm_exit": True,
             "default_site": "",
-            "window_positions": {}
+            "window_positions": {},
+            "dropdown_options": {}  # For customizable dropdowns
         }
         
         if os.path.exists(self.config_file):
