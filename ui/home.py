@@ -1,16 +1,19 @@
 from PyQt6.QtWidgets import (
     QWidget, QPushButton, QVBoxLayout, QLabel,
-    QMessageBox, QMainWindow, QStatusBar
+    QMessageBox, QMainWindow, QStatusBar, QMenu
 )
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QKeySequence, QFont, QAction, QShortcut
+from ui.help_utils import HelpButton, get_help_training_id
 from ui.email_ui import EmailPanel
 from ui.phone_ui import PhonePanel
 from ui.radio_ui import RadioPanel
 from ui.everbridge_ui import EverbridgePanel
 from ui.event_manager_ui import EventManager
 from ui.stats_ui import StatsPanel
+from ui.launcher_config import LauncherButton
 from datetime import datetime
+import json
 
 class HomeWindow(QMainWindow):
     def __init__(self):
@@ -22,6 +25,9 @@ class HomeWindow(QMainWindow):
         
         # Start maximized
         self.showMaximized()
+        
+        # Load launcher configurations
+        self.launcher_configs = self.load_launcher_configs()
         
         # Setup UI
         self.setup_ui()
@@ -43,136 +49,176 @@ class HomeWindow(QMainWindow):
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         
-        layout = QVBoxLayout()
-        layout.setSpacing(20)  # More spacing between elements
-        layout.setContentsMargins(50, 30, 50, 30)  # Larger margins
+        # Use grid layout for square buttons
+        from PyQt6.QtWidgets import QGridLayout, QHBoxLayout
+        main_layout = QVBoxLayout()
+        main_layout.setSpacing(20)
+        main_layout.setContentsMargins(50, 30, 50, 30)
         
-        # Title with larger font
+        # Title with help button
+        title_layout = QHBoxLayout()
+        title_layout.addStretch()
+        
         title = QLabel("Security Operations Logger")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        title_font = QFont("Arial", 28, QFont.Weight.Bold)
-        title.setFont(title_font)
-        title.setStyleSheet("color: #1976D2; margin-bottom: 30px;")
-        layout.addWidget(title)
+        from ui.styles import Fonts
+        title.setFont(Fonts.TITLE)
+        title.setStyleSheet("color: #e0e0e0;")
+        title_layout.addWidget(title)
+        
+        title_layout.addStretch()
+        
+        # Add help button
+        help_btn = HelpButton("Home Screen", get_help_training_id("home"), self)
+        title_layout.addWidget(help_btn)
+        
+        main_layout.addLayout(title_layout)
         
         # Subtitle with current user
         import os
         user = os.environ.get('USERNAME', 'Operator')
         subtitle = QLabel(f"Logged in as: {user}")
         subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        subtitle_font = QFont("Arial", 14)
-        subtitle.setFont(subtitle_font)
-        subtitle.setStyleSheet("color: #666; margin-bottom: 20px;")
-        layout.addWidget(subtitle)
+        subtitle.setFont(Fonts.NORMAL)
+        subtitle.setStyleSheet("color: #808080; margin-bottom: 20px;")
+        main_layout.addWidget(subtitle)
         
         # Logging section
-        log_label = QLabel("📝 Log New Activity")
+        log_label = QLabel("Log New Activity")
         log_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        section_font = QFont("Arial", 18, QFont.Weight.Bold)
-        log_label.setFont(section_font)
-        log_label.setStyleSheet("margin-top: 20px; margin-bottom: 10px;")
-        layout.addWidget(log_label)
+        log_label.setFont(Fonts.SUBTITLE)
+        log_label.setStyleSheet("color: #e0e0e0; margin-top: 20px; margin-bottom: 15px;")
+        main_layout.addWidget(log_label)
         
-        # Button configuration with shortcuts
+        # Create grid for square buttons
         from app_settings import app_settings
+        from ui.styles import get_button_style
         show_shortcuts = app_settings.get("show_shortcuts", True)
-        button_config = {
-            "Emails": ("📧 Emails", "F1", "#2196F3"),
-            "Phone": ("📞 Phone Calls", "F2", "#4CAF50"),
-            "Radio": ("📻 Radio Dispatch", "F3", "#FF9800"),
-            "Everbridge": ("⚠️ Everbridge Alerts", "F4", "#F44336")
-        }
+        
+        # Grid layout for logging buttons
+        log_grid = QGridLayout()
+        log_grid.setSpacing(15)
+        
+        button_config = [
+            ("Emails", "Email", "F1", 0, 0),
+            ("Phone", "Phone", "F2", 0, 1),
+            ("Radio", "Radio", "F3", 0, 2),
+            ("Everbridge", "Everbridge", "F4", 0, 3),
+            ("Facilities", "Facilities\nTicket", "Shift+F1", 1, 0)
+        ]
         
         self.buttons = {}
-        for key, (text, shortcut, color) in button_config.items():
+        for key, text, shortcut, row, col in button_config:
             btn_text = f"{text}\n({shortcut})" if show_shortcuts else text
             btn = QPushButton(btn_text)
-            btn.setFixedHeight(80)  # Larger buttons
-            btn_font = QFont("Arial", 16)
-            btn.setFont(btn_font)
-            btn.setStyleSheet(f"""
-                QPushButton {{
-                    background-color: {color};
-                    color: white;
-                    border: none;
-                    border-radius: 10px;
-                    padding: 10px;
-                }}
-                QPushButton:hover {{
-                    background-color: {color}CC;
-                }}
-                QPushButton:pressed {{
-                    background-color: {color}99;
-                }}
-            """)
-            btn.setToolTip(f"Press {shortcut} to open {text}")
+            btn.setFixedSize(120, 120)  # Square buttons
+            btn.setFont(Fonts.BUTTON)
+            btn.setStyleSheet(get_button_style())
+            btn.setToolTip(f"Press {shortcut} to open {text} Log")
             self.buttons[key] = btn
-            layout.addWidget(btn)
+            log_grid.addWidget(btn, row, col)
+        
+        # Center the grid
+        grid_container = QWidget()
+        grid_container.setLayout(log_grid)
+        grid_container.setMaximumWidth(550)
+        
+        h_layout = QHBoxLayout()
+        h_layout.addStretch()
+        h_layout.addWidget(grid_container)
+        h_layout.addStretch()
+        main_layout.addLayout(h_layout)
         
         # Management section
-        layout.addStretch()
-        manage_label = QLabel("📊 Manage & Analyze")
+        main_layout.addStretch()
+        manage_label = QLabel("Management Tools")
         manage_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        manage_label.setFont(section_font)
-        manage_label.setStyleSheet("margin-top: 30px; margin-bottom: 10px;")
-        layout.addWidget(manage_label)
+        manage_label.setFont(Fonts.SUBTITLE)
+        manage_label.setStyleSheet("color: #e0e0e0; margin-top: 30px; margin-bottom: 15px;")
+        main_layout.addWidget(manage_label)
         
-        # Event Manager button
-        event_text = "🔗 Event Manager\n(F5)" if show_shortcuts else "🔗 Event Manager"
-        self.event_manager_btn = QPushButton(event_text)
-        self.event_manager_btn.setFixedHeight(80)
-        self.event_manager_btn.setFont(btn_font)
-        self.event_manager_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #7E57C2;
-                color: white;
-                border: none;
-                border-radius: 10px;
-                padding: 10px;
-            }
-            QPushButton:hover {
-                background-color: #7E57C2CC;
-            }
-            QPushButton:pressed {
-                background-color: #7E57C299;
-            }
-        """)
-        self.event_manager_btn.setToolTip("Press F5 to open Event Manager")
-        layout.addWidget(self.event_manager_btn)
+        # Grid layout for management buttons
+        manage_grid = QGridLayout()
+        manage_grid.setSpacing(15)
         
-        # Stats button
-        stats_text = "📊 Statistics & Reports\n(F6)" if show_shortcuts else "📊 Statistics & Reports"
-        self.stats_btn = QPushButton(stats_text)
-        self.stats_btn.setFixedHeight(80)
-        self.stats_btn.setFont(btn_font)
-        self.stats_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #00897B;
-                color: white;
-                border: none;
-                border-radius: 10px;
-                padding: 10px;
-            }
-            QPushButton:hover {
-                background-color: #00897BCC;
-            }
-            QPushButton:pressed {
-                background-color: #00897B99;
-            }
-        """)
-        self.stats_btn.setToolTip("Press F6 to open Statistics")
-        layout.addWidget(self.stats_btn)
+        # Management buttons configuration
+        manage_buttons = [
+            ("event_manager", "Event\nManager", "F5", 0, 0),
+            ("stats", "Statistics", "F6", 0, 1),
+            ("logs", "View Logs", "F7", 0, 2),
+            ("training", "Training", "F8", 0, 3)
+        ]
         
-        layout.addStretch()
-        central_widget.setLayout(layout)
+        self.manage_buttons = {}
+        for key, text, shortcut, row, col in manage_buttons:
+            btn_text = f"{text}\n({shortcut})" if show_shortcuts else text
+            btn = QPushButton(btn_text)
+            btn.setFixedSize(120, 120)  # Square buttons
+            btn.setFont(Fonts.BUTTON)
+            btn.setStyleSheet(get_button_style())
+            btn.setToolTip(f"Press {shortcut} to open {text}")
+            self.manage_buttons[key] = btn
+            manage_grid.addWidget(btn, row, col)
         
-        # Connect buttons
+        # Center the management grid
+        manage_container = QWidget()
+        manage_container.setLayout(manage_grid)
+        manage_container.setMaximumWidth(550)
+        
+        h_layout2 = QHBoxLayout()
+        h_layout2.addStretch()
+        h_layout2.addWidget(manage_container)
+        h_layout2.addStretch()
+        main_layout.addLayout(h_layout2)
+        
+        # Quick Launch section
+        main_layout.addStretch()
+        launch_label = QLabel("Quick Launch")
+        launch_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        launch_label.setFont(Fonts.SUBTITLE)
+        launch_label.setStyleSheet("color: #e0e0e0; margin-top: 30px; margin-bottom: 15px;")
+        main_layout.addWidget(launch_label)
+        
+        # Grid layout for launcher buttons
+        launcher_grid = QGridLayout()
+        launcher_grid.setSpacing(15)
+        
+        # Create 8 launcher buttons (2 rows of 4)
+        self.launcher_buttons = []
+        for i in range(8):
+            config = self.launcher_configs.get(str(i), {})
+            launcher_btn = LauncherButton(config, self)
+            launcher_btn.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+            launcher_btn.customContextMenuRequested.connect(lambda pos, btn=launcher_btn: self.show_launcher_menu(btn))
+            self.launcher_buttons.append(launcher_btn)
+            launcher_grid.addWidget(launcher_btn, i // 4, i % 4)
+        
+        # Center the launcher grid
+        launcher_container = QWidget()
+        launcher_container.setLayout(launcher_grid)
+        launcher_container.setMaximumWidth(550)
+        
+        h_layout3 = QHBoxLayout()
+        h_layout3.addStretch()
+        h_layout3.addWidget(launcher_container)
+        h_layout3.addStretch()
+        main_layout.addLayout(h_layout3)
+        
+        main_layout.addStretch()
+        central_widget.setLayout(main_layout)
+        
+        # Connect logging buttons
         self.buttons["Emails"].clicked.connect(self.open_email_panel)
         self.buttons["Phone"].clicked.connect(self.open_phone_panel)
         self.buttons["Radio"].clicked.connect(self.open_radio_panel)
         self.buttons["Everbridge"].clicked.connect(self.open_everbridge_panel)
-        self.event_manager_btn.clicked.connect(self.open_event_manager)
-        self.stats_btn.clicked.connect(self.open_stats_panel)
+        self.buttons["Facilities"].clicked.connect(self.open_facilities_ticket)
+        
+        # Connect management buttons
+        self.manage_buttons["event_manager"].clicked.connect(self.open_event_manager)
+        self.manage_buttons["stats"].clicked.connect(self.open_stats_panel)
+        self.manage_buttons["logs"].clicked.connect(self.open_logs_panel)
+        self.manage_buttons["training"].clicked.connect(self.open_training_panel)
 
     def setup_shortcuts(self):
         """Setup keyboard shortcuts"""
@@ -183,6 +229,9 @@ class HomeWindow(QMainWindow):
         QShortcut(QKeySequence("F4"), self, self.open_everbridge_panel)
         QShortcut(QKeySequence("F5"), self, self.open_event_manager)
         QShortcut(QKeySequence("F6"), self, self.open_stats_panel)
+        QShortcut(QKeySequence("Shift+F1"), self, self.open_facilities_ticket)
+        QShortcut(QKeySequence("F7"), self, self.open_logs_panel)
+        QShortcut(QKeySequence("F8"), self, self.open_training_panel)
         
         # Additional shortcuts
         QShortcut(QKeySequence("Ctrl+Q"), self, self.close)
@@ -192,7 +241,8 @@ class HomeWindow(QMainWindow):
     def setup_menu(self):
         """Setup menu bar"""
         menubar = self.menuBar()
-        menubar.setFont(QFont("Arial", 12))
+        from ui.styles import Fonts
+        menubar.setFont(Fonts.NORMAL)
         
         # File menu
         file_menu = menubar.addMenu("&File")
@@ -245,6 +295,8 @@ class HomeWindow(QMainWindow):
         <tr><td><b>F4</b></td><td>Open Everbridge Logger</td></tr>
         <tr><td><b>F5</b></td><td>Open Event Manager</td></tr>
         <tr><td><b>F6</b></td><td>Open Statistics</td></tr>
+        <tr><td><b>F7</b></td><td>Open Logs Viewer</td></tr>
+        <tr><td><b>F8</b></td><td>Open Training</td></tr>
         <tr><td><b>F11</b></td><td>Toggle Full Screen</td></tr>
         <tr><td><b>Ctrl+Q</b></td><td>Exit Application</td></tr>
         <tr><td><b>Ctrl+H</b></td><td>Show This Help</td></tr>
@@ -272,6 +324,11 @@ class HomeWindow(QMainWindow):
     def open_everbridge_panel(self):
         self.everbridge_window = EverbridgePanel()
         self.everbridge_window.show()
+    
+    def open_facilities_ticket(self):
+        from ui.facilities_ticket_ui import FacilitiesTicketDialog
+        dialog = FacilitiesTicketDialog(parent=self)
+        dialog.exec()
 
     def open_event_manager(self):
         self.event_manager_window = EventManager()
@@ -281,11 +338,61 @@ class HomeWindow(QMainWindow):
         self.stats_window = StatsPanel()
         self.stats_window.show()
     
+    def open_logs_panel(self):
+        from ui.logs_viewer_ui import LogsViewerPanel
+        self.logs_window = LogsViewerPanel()
+        self.logs_window.show()
+    
+    def open_training_panel(self):
+        from ui.training_ui import TrainingPanel
+        self.training_window = TrainingPanel()
+        self.training_window.show()
+    
     def show_settings(self):
         """Show settings dialog"""
         from ui.settings_dialog import SettingsDialog
         dialog = SettingsDialog(self)
         dialog.exec()
+    
+    def show_launcher_menu(self, button):
+        """Show context menu for launcher button"""
+        menu = QMenu(self)
+        
+        # Configure action
+        configure_action = QAction("Configure", self)
+        configure_action.triggered.connect(button.edit_config)
+        menu.addAction(configure_action)
+        
+        # Clear action
+        if button.config.get('name'):
+            clear_action = QAction("Clear", self)
+            clear_action.triggered.connect(lambda: self.clear_launcher(button))
+            menu.addAction(clear_action)
+        
+        menu.exec(button.mapToGlobal(button.rect().center()))
+    
+    def clear_launcher(self, button):
+        """Clear a launcher button configuration"""
+        button.set_config({})
+        self.save_launcher_configs()
+    
+    def load_launcher_configs(self):
+        """Load launcher configurations from file"""
+        try:
+            with open('launcher_configs.json', 'r') as f:
+                return json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            return {}
+    
+    def save_launcher_configs(self):
+        """Save launcher configurations to file"""
+        configs = {}
+        for i, btn in enumerate(self.launcher_buttons):
+            if btn.config:
+                configs[str(i)] = btn.config
+        
+        with open('launcher_configs.json', 'w') as f:
+            json.dump(configs, f, indent=2)
     
     def show_about(self):
         """Show about dialog"""

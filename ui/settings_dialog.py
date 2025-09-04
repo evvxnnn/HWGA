@@ -109,6 +109,48 @@ class DropdownCustomizationWidget(QWidget):
     def get_items(self):
         return [self.list_widget.item(i).text() for i in range(self.list_widget.count())]
 
+class OnCallContactsWidget(QWidget):
+    """Widget for managing on-call tech contacts"""
+    def __init__(self, contacts, parent=None):
+        super().__init__(parent)
+        self.Fonts = get_styles()
+        self.contacts = contacts.copy()
+        
+        layout = QVBoxLayout()
+        
+        # Create text edit for JSON-style editing
+        self.contacts_edit = QTextEdit()
+        self.contacts_edit.setFont(self.Fonts.NORMAL)
+        self.contacts_edit.setPlainText(json.dumps(self.contacts, indent=2))
+        self.contacts_edit.setMaximumHeight(200)
+        layout.addWidget(self.contacts_edit)
+        
+        # Info label
+        info = QLabel("Format: {\"SITE\": {\"name\": \"Name\", \"phone\": \"Number\"}}") 
+        info.setStyleSheet("color: #666; font-style: italic;")
+        layout.addWidget(info)
+        
+        # Reset button
+        reset_btn = QPushButton("Reset to Defaults")
+        reset_btn.clicked.connect(self.reset_to_defaults)
+        layout.addWidget(reset_btn)
+        
+        self.setLayout(layout)
+    
+    def reset_to_defaults(self):
+        default = {
+            "SEP": {"name": "Gabe Jones", "phone": "555-0101"},
+            "FSP": {"name": "Logan Tyndall", "phone": "555-0102"},
+            "COB": {"name": "Evan Wainscott", "phone": "555-0103"}
+        }
+        self.contacts_edit.setPlainText(json.dumps(default, indent=2))
+    
+    def get_contacts(self):
+        try:
+            return json.loads(self.contacts_edit.toPlainText())
+        except:
+            return self.contacts
+
 class UnitLocationWidget(QWidget):
     """Widget for managing unit-location mappings"""
     def __init__(self, unit_locations, parent=None):
@@ -313,6 +355,11 @@ class SettingsDialog(QDialog):
         self.setup_theme_tab()
         self.tabs.addTab(self.theme_tab, "Theme")
         
+        # Launcher tab
+        self.launcher_tab = QWidget()
+        self.setup_launcher_tab()
+        self.tabs.addTab(self.launcher_tab, "Quick Launch")
+        
         # Dropdown Options tab
         self.dropdown_tab = QWidget()
         self.setup_dropdown_tab()
@@ -486,6 +533,139 @@ class SettingsDialog(QDialog):
         layout.addStretch()
         self.theme_tab.setLayout(layout)
     
+    def setup_launcher_tab(self):
+        """Setup the launcher configuration tab"""
+        from ui.launcher_config import LauncherConfigDialog
+        
+        layout = QVBoxLayout()
+        layout.setSpacing(15)
+        
+        # Info
+        info = QLabel(
+            "Configure Quick Launch buttons that appear on the home screen.\n"
+            "You can launch programs, open websites, or access folders."
+        )
+        info.setFont(self.Fonts.NORMAL)
+        info.setWordWrap(True)
+        layout.addWidget(info)
+        
+        # Launcher list
+        layout.addWidget(QLabel("Quick Launch Slots:"))
+        self.launcher_list = QListWidget()
+        self.launcher_list.setFont(self.Fonts.NORMAL)
+        
+        # Load launcher configs
+        try:
+            with open('launcher_configs.json', 'r') as f:
+                configs = json.load(f)
+        except:
+            configs = {}
+        
+        # Add 8 slots
+        for i in range(8):
+            config = configs.get(str(i), {})
+            if config.get('name'):
+                item_text = f"Slot {i+1}: {config['name']} ({config.get('type', 'none')})"
+            else:
+                item_text = f"Slot {i+1}: [Empty]"
+            item = QListWidgetItem(item_text)
+            item.setData(Qt.ItemDataRole.UserRole, (i, config))
+            self.launcher_list.addItem(item)
+        
+        layout.addWidget(self.launcher_list)
+        
+        # Buttons
+        button_layout = QHBoxLayout()
+        
+        configure_btn = QPushButton("Configure Selected")
+        configure_btn.clicked.connect(self.configure_launcher)
+        button_layout.addWidget(configure_btn)
+        
+        clear_btn = QPushButton("Clear Selected")
+        clear_btn.clicked.connect(self.clear_launcher)
+        button_layout.addWidget(clear_btn)
+        
+        clear_all_btn = QPushButton("Clear All")
+        clear_all_btn.clicked.connect(self.clear_all_launchers)
+        button_layout.addWidget(clear_all_btn)
+        
+        layout.addLayout(button_layout)
+        layout.addStretch()
+        self.launcher_tab.setLayout(layout)
+    
+    def configure_launcher(self):
+        """Configure selected launcher"""
+        from ui.launcher_config import LauncherConfigDialog
+        current_item = self.launcher_list.currentItem()
+        if current_item:
+            index, config = current_item.data(Qt.ItemDataRole.UserRole)
+            dialog = LauncherConfigDialog(config, self)
+            if dialog.exec() == QDialog.DialogCode.Accepted:
+                new_config = dialog.get_config()
+                
+                # Update config file
+                try:
+                    with open('launcher_configs.json', 'r') as f:
+                        configs = json.load(f)
+                except:
+                    configs = {}
+                
+                configs[str(index)] = new_config
+                
+                with open('launcher_configs.json', 'w') as f:
+                    json.dump(configs, f, indent=2)
+                
+                # Update list item
+                if new_config.get('name'):
+                    item_text = f"Slot {index+1}: {new_config['name']} ({new_config.get('type', 'none')})"
+                else:
+                    item_text = f"Slot {index+1}: [Empty]"
+                current_item.setText(item_text)
+                current_item.setData(Qt.ItemDataRole.UserRole, (index, new_config))
+    
+    def clear_launcher(self):
+        """Clear selected launcher"""
+        current_item = self.launcher_list.currentItem()
+        if current_item:
+            index, _ = current_item.data(Qt.ItemDataRole.UserRole)
+            
+            # Update config file
+            try:
+                with open('launcher_configs.json', 'r') as f:
+                    configs = json.load(f)
+            except:
+                configs = {}
+            
+            if str(index) in configs:
+                del configs[str(index)]
+            
+            with open('launcher_configs.json', 'w') as f:
+                json.dump(configs, f, indent=2)
+            
+            # Update list item
+            current_item.setText(f"Slot {index+1}: [Empty]")
+            current_item.setData(Qt.ItemDataRole.UserRole, (index, {}))
+    
+    def clear_all_launchers(self):
+        """Clear all launchers"""
+        reply = QMessageBox.question(
+            self,
+            "Clear All",
+            "Clear all launcher configurations?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        
+        if reply == QMessageBox.StandardButton.Yes:
+            # Clear config file
+            with open('launcher_configs.json', 'w') as f:
+                json.dump({}, f)
+            
+            # Update list
+            for i in range(self.launcher_list.count()):
+                item = self.launcher_list.item(i)
+                item.setText(f"Slot {i+1}: [Empty]")
+                item.setData(Qt.ItemDataRole.UserRole, (i, {}))
+    
     def setup_dropdown_tab(self):
         """Setup the dropdown customization tab"""
         layout = QVBoxLayout()
@@ -502,7 +682,19 @@ class SettingsDialog(QDialog):
         
         # Site codes - used globally across panels
         from config import SITE_CODES
-        current_sites = dropdown_settings.get("site_codes", SITE_CODES)
+        from ui.radio_ui import DEFAULT_UNITS
+        
+        # Get unique locations from all patrol units as base for site codes
+        all_patrol_locations = set()
+        for locations in DEFAULT_UNITS.values():
+            all_patrol_locations.update(locations)
+        
+        # If no site codes saved yet, use patrol locations as base
+        current_sites = dropdown_settings.get("site_codes", None)
+        if current_sites is None:
+            # First time - merge patrol locations with default SITE_CODES
+            current_sites = sorted(list(all_patrol_locations) + SITE_CODES)
+        
         self.site_codes_widget = DropdownCustomizationWidget(
             "Site Codes (used in Phone, Everbridge, and other panels)", 
             "site_codes", 
@@ -510,8 +702,12 @@ class SettingsDialog(QDialog):
         )
         layout.addWidget(self.site_codes_widget)
         
+        # Add button to sync from patrol locations
+        sync_btn = QPushButton("Sync from Patrol Locations")
+        sync_btn.clicked.connect(self.sync_sites_from_patrol)
+        layout.addWidget(sync_btn)
+        
         # Radio unit-location mappings
-        from ui.radio_ui import DEFAULT_UNITS
         current_unit_locations = dropdown_settings.get("radio_unit_locations", DEFAULT_UNITS)
         
         unit_group = QGroupBox("Radio Unit Location Assignments")
@@ -540,8 +736,50 @@ class SettingsDialog(QDialog):
         )
         layout.addWidget(self.call_types_widget)
         
+        # On-Call Tech Contacts
+        oncall_group = QGroupBox("On-Call Tech Contacts")
+        oncall_group.setFont(self.Fonts.LABEL)
+        oncall_layout = QVBoxLayout()
+        
+        # Default on-call contacts
+        default_oncall = {
+            "SEP": {"name": "Gabe Jones", "phone": "555-0101"},
+            "FSP": {"name": "Logan Tyndall", "phone": "555-0102"},
+            "COB": {"name": "Evan Wainscott", "phone": "555-0103"}
+        }
+        
+        current_oncall = dropdown_settings.get("oncall_contacts", default_oncall)
+        
+        self.oncall_widget = OnCallContactsWidget(current_oncall)
+        oncall_layout.addWidget(self.oncall_widget)
+        
+        oncall_group.setLayout(oncall_layout)
+        layout.addWidget(oncall_group)
+        
         layout.addStretch()
         self.dropdown_tab.setLayout(layout)
+    
+    def sync_sites_from_patrol(self):
+        """Sync site codes from patrol locations"""
+        from ui.radio_ui import DEFAULT_UNITS
+        
+        # Get unique locations from all patrol units
+        all_patrol_locations = set()
+        for locations in DEFAULT_UNITS.values():
+            all_patrol_locations.update(locations)
+        
+        # Get current site codes
+        current_sites = set(self.site_codes_widget.get_items())
+        
+        # Merge with patrol locations
+        merged_sites = sorted(list(current_sites | all_patrol_locations))
+        
+        # Update the list widget
+        self.site_codes_widget.list_widget.clear()
+        self.site_codes_widget.list_widget.addItems(merged_sites)
+        
+        QMessageBox.information(self, "Sites Synced", 
+            f"Added {len(all_patrol_locations - current_sites)} new sites from patrol locations.")
     
     def update_scale_label(self, value):
         self.scale_label.setText(f"{value}%")

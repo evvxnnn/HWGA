@@ -223,8 +223,8 @@ def insert_phone_log(
     issue_subtype: str | None,
     message: str | None,
     timestamp: str,
-) -> None:
-    """Insert a new phone call log into the database."""
+) -> int | None:
+    """Insert a new phone call log into the database and return its ID."""
     try:
         with sqlite3.connect(DB_PATH) as conn:
             c = conn.cursor()
@@ -249,9 +249,12 @@ def insert_phone_log(
                     datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 ),
             )
-        logger.info("Inserted phone log of type '%s'", call_type)
+            log_id = c.lastrowid
+        logger.info("Inserted phone log of type '%s' with ID %s", call_type, log_id)
+        return log_id
     except Exception:
         logger.exception("Failed to insert phone log")
+        return None
         raise
 
 def insert_radio_log(

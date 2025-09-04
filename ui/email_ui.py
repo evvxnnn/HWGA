@@ -1,13 +1,16 @@
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QLabel, QPushButton, QTabWidget,
     QFileDialog, QLineEdit, QTextEdit, QMessageBox, QMainWindow,
-    QStatusBar, QComboBox
+    QStatusBar, QComboBox, QTableWidget, QTableWidgetItem,
+    QSplitter, QHeaderView, QHBoxLayout
 )
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QDragEnterEvent, QDropEvent, QFont, QShortcut, QKeySequence
+from ui.help_utils import HelpButton, get_help_training_id
 from msg_parser import parse_msg
 from database import insert_email_log
 from datetime import datetime
+from log_manager import log_manager
 from app_settings import app_settings
 from config import SITE_CODES as DEFAULT_SITE_CODES
 
@@ -24,16 +27,17 @@ EMAIL_TABS = [
 
 class DragDropLabel(QLabel):
     def __init__(self, parent):
-        super().__init__("📁 Drag a .msg file here or click to browse\n\n(Requires Outlook installed)")
+        super().__init__("Drag a .msg file here or click to browse\n\n(Requires Outlook installed)")
         self.parent = parent
         self.setStyleSheet("""
             QLabel {
-                border: 3px dashed #2196F3;
-                border-radius: 15px;
+                border: 2px dashed #333333;
+                border-radius: 4px;
                 padding: 40px;
-                background-color: rgba(33, 150, 243, 0.1);
-                font-size: 16px;
-                font-weight: bold;
+                background-color: #1a1a1a;
+                color: #808080;
+                font-size: 12px;
+                font-weight: 500;
             }
         """)
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -47,12 +51,13 @@ class DragDropLabel(QLabel):
                 event.acceptProposedAction()
                 self.setStyleSheet("""
                     QLabel {
-                        border: 3px solid #4CAF50;
-                        border-radius: 15px;
+                        border: 2px solid #4a4a4a;
+                        border-radius: 4px;
                         padding: 40px;
-                        background-color: rgba(76, 175, 80, 0.2);
-                        font-size: 16px;
-                        font-weight: bold;
+                        background-color: #1f1f1f;
+                        color: #e0e0e0;
+                        font-size: 12px;
+                        font-weight: 500;
                     }
                 """)
             else:
@@ -63,12 +68,13 @@ class DragDropLabel(QLabel):
     def dragLeaveEvent(self, event):
         self.setStyleSheet("""
             QLabel {
-                border: 3px dashed #2196F3;
-                border-radius: 15px;
+                border: 2px dashed #333333;
+                border-radius: 4px;
                 padding: 40px;
-                background-color: rgba(33, 150, 243, 0.1);
-                font-size: 16px;
-                font-weight: bold;
+                background-color: #1a1a1a;
+                color: #808080;
+                font-size: 12px;
+                font-weight: 500;
             }
         """)
 
@@ -94,14 +100,14 @@ class EmailPanel(QMainWindow):
         self.current_tab = "Data Request"
         self.msg_path = None
         self.email_meta = {}
-
-        self.init_ui()
-        self.setup_shortcuts()
         
-        # Status bar
+        # Status bar - initialize BEFORE init_ui
         self.status_bar = QStatusBar()
         self.setStatusBar(self.status_bar)
         self.status_bar.showMessage("Ready to log email")
+
+        self.init_ui()
+        self.setup_shortcuts()
 
     def init_ui(self):
         # Central widget
@@ -111,13 +117,21 @@ class EmailPanel(QMainWindow):
         layout = QVBoxLayout()
         layout.setSpacing(15)
         layout.setContentsMargins(30, 20, 30, 20)
+        
+        # Add help button in top right
+        from PyQt6.QtWidgets import QHBoxLayout
+        header_layout = QHBoxLayout()
+        header_layout.addStretch()
+        help_btn = HelpButton("Email Logger", get_help_training_id("email"), self)
+        header_layout.addWidget(help_btn)
+        layout.addLayout(header_layout)
 
         # Title
-        title = QLabel("📧 Email Logger")
-        title_font = QFont("Arial", 24, QFont.Weight.Bold)
+        title = QLabel("Email Logger")
+        title_font = QFont("Segoe UI", 18, QFont.Weight.Bold)
         title.setFont(title_font)
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        title.setStyleSheet("margin-bottom: 20px;")
+        title.setStyleSheet("color: #e0e0e0; margin-bottom: 10px;")
         layout.addWidget(title)
 
         # Tabs with larger font
@@ -194,15 +208,222 @@ class EmailPanel(QMainWindow):
             }
         """)
         self.save_btn.clicked.connect(self.save_log)
-        layout.addWidget(self.save_btn)
+        
+        # Create main tab widget for better organization
+        self.main_tabs = QTabWidget()
+        self.main_tabs.setStyleSheet("""
+            QTabWidget::pane {
+                border: 1px solid #333333;
+                background-color: #0d0d0d;
+                margin-top: -1px;
+            }
+            QTabBar::tab {
+                padding: 10px 20px;
+                background-color: #1a1a1a;
+                color: #808080;
+                border: 1px solid #262626;
+                margin-right: 2px;
+            }
+            QTabBar::tab:selected {
+                background-color: #0d0d0d;
+                color: #e0e0e0;
+                border-bottom: 2px solid #5a5a5a;
+            }
+        """)
+        
+        # Input Tab - contains existing form
+        input_widget = QWidget()
+        input_widget.setLayout(layout)
+        self.main_tabs.addTab(input_widget, "Log New Email")
+        
+        # View Logs Tab
+        log_widget = QWidget()
+        log_layout = QVBoxLayout()
+        log_layout.setContentsMargins(20, 20, 20, 20)
+        
+        # Header with controls
+        controls_layout = QHBoxLayout()
+        
+        # Date filter
+        controls_layout.addWidget(QLabel("Filter:"))
+        self.log_filter = QLineEdit()
+        self.log_filter.setPlaceholderText("Search logs...")
+        self.log_filter.textChanged.connect(self.filter_logs)
+        self.log_filter.setStyleSheet("""
+            QLineEdit {
+                padding: 8px;
+                background-color: #1a1a1a;
+                color: #e0e0e0;
+                border: 1px solid #333333;
+                border-radius: 4px;
+                max-width: 300px;
+            }
+        """)
+        controls_layout.addWidget(self.log_filter)
+        
+        controls_layout.addStretch()
+        
+        # Refresh button
+        refresh_btn = QPushButton("Refresh")
+        refresh_btn.clicked.connect(self.load_recent_logs)
+        refresh_btn.setFixedWidth(100)
+        refresh_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #1a1a1a;
+                color: #e0e0e0;
+                border: 1px solid #333333;
+                padding: 8px;
+                border-radius: 4px;
+            }
+            QPushButton:hover {
+                background-color: #262626;
+            }
+        """)
+        controls_layout.addWidget(refresh_btn)
+        
+        # Export button
+        export_btn = QPushButton("Export")
+        export_btn.clicked.connect(self.export_logs)
+        export_btn.setFixedWidth(100)
+        export_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #1a1a1a;
+                color: #e0e0e0;
+                border: 1px solid #333333;
+                padding: 8px;
+                border-radius: 4px;
+            }
+            QPushButton:hover {
+                background-color: #262626;
+            }
+        """)
+        controls_layout.addWidget(export_btn)
+        
+        log_layout.addLayout(controls_layout)
+        
+        # Table for logs
+        self.log_table = QTableWidget()
+        self.log_table.setStyleSheet("""
+            QTableWidget {
+                background-color: #141414;
+                color: #e0e0e0;
+                gridline-color: #262626;
+                alternate-background-color: #1a1a1a;
+            }
+            QTableWidget::item {
+                padding: 5px;
+            }
+            QTableWidget::item:selected {
+                background-color: #333333;
+            }
+            QHeaderView::section {
+                background-color: #1a1a1a;
+                color: #e0e0e0;
+                padding: 8px;
+                border: 1px solid #262626;
+                font-weight: 600;
+            }
+        """)
+        self.log_table.setAlternatingRowColors(True)
+        self.log_table.horizontalHeader().setStretchLastSection(True)
+        self.log_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        log_layout.addWidget(self.log_table)
+        
+        log_widget.setLayout(log_layout)
+        self.main_tabs.addTab(log_widget, "View Email Logs")
+        
+        # Set main layout
+        main_layout = QVBoxLayout()
+        main_layout.setContentsMargins(10, 10, 10, 10)
+        main_layout.addWidget(self.main_tabs)
+        central_widget.setLayout(main_layout)
+        
+        # Load initial logs
+        self.load_recent_logs()
 
-        central_widget.setLayout(layout)
-
+    def load_recent_logs(self):
+        """Load recent email logs into the table"""
+        try:
+            df = log_manager.get_recent_logs('email', limit=50)
+            self.current_df = df  # Store for filtering
+            if not df.empty:
+                self.log_table.setRowCount(len(df))
+                self.log_table.setColumnCount(len(df.columns))
+                self.log_table.setHorizontalHeaderLabels(df.columns.tolist())
+                
+                for row in range(len(df)):
+                    for col in range(len(df.columns)):
+                        value = str(df.iloc[row, col])
+                        item = QTableWidgetItem(value)
+                        self.log_table.setItem(row, col, item)
+                
+                # Adjust column widths
+                self.log_table.resizeColumnsToContents()
+                
+                # Update status
+                self.status_bar.showMessage(f"Loaded {len(df)} email log entries")
+            else:
+                self.log_table.setRowCount(0)
+                self.log_table.setColumnCount(5)
+                self.log_table.setHorizontalHeaderLabels(["Date", "Time", "From", "Subject", "Category"])
+                self.status_bar.showMessage("No email logs found")
+        except Exception as e:
+            print(f"Error loading logs: {e}")
+            self.status_bar.showMessage("Error loading logs")
+    
+    def filter_logs(self):
+        """Filter logs based on search text"""
+        if not hasattr(self, 'current_df') or self.current_df.empty:
+            return
+        
+        search_text = self.log_filter.text().lower()
+        if not search_text:
+            # Show all if no filter
+            self.load_recent_logs()
+            return
+        
+        # Filter dataframe
+        filtered_df = self.current_df[
+            self.current_df.apply(
+                lambda row: any(search_text in str(cell).lower() for cell in row),
+                axis=1
+            )
+        ]
+        
+        # Update table
+        self.log_table.setRowCount(len(filtered_df))
+        for row in range(len(filtered_df)):
+            for col in range(len(filtered_df.columns)):
+                value = str(filtered_df.iloc[row, col])
+                item = QTableWidgetItem(value)
+                self.log_table.setItem(row, col, item)
+        
+        self.status_bar.showMessage(f"Showing {len(filtered_df)} of {len(self.current_df)} entries")
+    
+    def export_logs(self):
+        """Export logs to file"""
+        from PyQt6.QtWidgets import QFileDialog
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, "Export Email Logs", "email_logs_export.xlsx", 
+            "Excel Files (*.xlsx);;CSV Files (*.csv)"
+        )
+        if file_path:
+            try:
+                if hasattr(self, 'current_df'):
+                    if file_path.endswith('.csv'):
+                        self.current_df.to_csv(file_path, index=False)
+                    else:
+                        self.current_df.to_excel(file_path, index=False)
+                    QMessageBox.information(self, "Success", f"Logs exported to {file_path}")
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to export: {str(e)}")
+    
     def setup_shortcuts(self):
         """Setup keyboard shortcuts"""
         QShortcut(QKeySequence("Ctrl+S"), self, self.save_log)
         QShortcut(QKeySequence("Ctrl+O"), self, self.select_file)
         QShortcut(QKeySequence("Escape"), self, self.close)
+        QShortcut(QKeySequence("F5"), self, self.load_recent_logs)
 
     def switch_tab(self, index):
         self.current_tab = EMAIL_TABS[index]
@@ -483,6 +704,52 @@ class EmailPanel(QMainWindow):
                 break
 
         insert_email_log(log_type, sender, recipient, subject, timestamp, extra_field, msg_path)
+        
+        # Also save to Excel log
+        email_data = {
+            'from': sender or recipient or 'Unknown',
+            'subject': subject or 'No Subject',
+            'category': log_type,
+            'site': extra_field if extra_field else '',
+            'priority': 'Normal',
+            'notes': f"MSG Path: {msg_path}" if msg_path and msg_path != "Manual Entry" else ""
+        }
+        
+        try:
+            log_manager.add_email_log(email_data)
+            # Refresh the log display
+            self.load_recent_logs()
+        except Exception as e:
+            print(f"Error saving to Excel: {e}")
 
         QMessageBox.information(self, "Success", "Email log saved successfully!")
-        self.close()
+        
+        # Check if this was an Everbridge Alert email and continue the workflow
+        if log_type == "Everbridge Alert":
+            reply = QMessageBox.question(
+                self,
+                "Send Everbridge Alert",
+                "Would you like to proceed with sending the Everbridge alert?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.Yes
+            )
+            
+            if reply == QMessageBox.StandardButton.Yes:
+                # Open Everbridge alert panel with pre-filled data
+                from ui.everbridge_ui import EverbridgePanel
+                everbridge_panel = EverbridgePanel()
+                
+                # Pre-fill the message if we have it
+                if extra_field:  # This contains the alert message
+                    everbridge_panel.message_box.setText(extra_field)
+                
+                # Pre-fill site if available
+                site = self.dynamic_fields.get("Site Code")
+                if site and hasattr(site, 'currentText'):
+                    everbridge_panel.site_code_field.setCurrentText(site.currentText())
+                
+                everbridge_panel.show()
+        
+        # Switch to logs tab to show the new entry
+        self.main_tabs.setCurrentIndex(1)
+        self.load_recent_logs()

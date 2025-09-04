@@ -5,140 +5,133 @@ from PyQt6.QtGui import QFont
 
 # Font configurations
 class Fonts:
-    TITLE = QFont("Arial", 24, QFont.Weight.Bold)
-    SUBTITLE = QFont("Arial", 18, QFont.Weight.Bold)
-    LABEL = QFont("Arial", 14, QFont.Weight.Bold)
-    NORMAL = QFont("Arial", 14)
-    BUTTON = QFont("Arial", 16)
-    BUTTON_LARGE = QFont("Arial", 16, QFont.Weight.Bold)
-    STATUS = QFont("Arial", 12)
+    TITLE = QFont("Segoe UI", 20, QFont.Weight.DemiBold)
+    SUBTITLE = QFont("Segoe UI", 16, QFont.Weight.DemiBold)
+    LABEL = QFont("Segoe UI", 12, QFont.Weight.Medium)
+    NORMAL = QFont("Segoe UI", 11)
+    BUTTON = QFont("Segoe UI", 11, QFont.Weight.Medium)
+    BUTTON_LARGE = QFont("Segoe UI", 12, QFont.Weight.Medium)
+    STATUS = QFont("Segoe UI", 10)
 
-# Color scheme
+# Color scheme - Professional monochrome
 class Colors:
-    PRIMARY = "#2196F3"      # Blue
-    SUCCESS = "#4CAF50"      # Green
-    WARNING = "#FF9800"      # Orange
-    DANGER = "#F44336"       # Red
-    INFO = "#00BCD4"         # Cyan
-    SECONDARY = "#9C27B0"    # Purple
-    DARK = "#212121"         # Dark gray
-    LIGHT = "#F5F5F5"        # Light gray
+    PRIMARY = "#4a4a4a"      # Medium gray
+    SUCCESS = "#5a5a5a"      # Light gray
+    WARNING = "#6a6a6a"      # Lighter gray
+    DANGER = "#7a7a7a"       # Even lighter gray
+    INFO = "#404040"         # Dark gray
+    SECONDARY = "#505050"    # Gray
+    DARK = "#1a1a1a"         # Very dark gray
+    LIGHT = "#e0e0e0"        # Light gray
     
-    # Specific use colors
-    EMAIL = "#2196F3"
-    PHONE = "#4CAF50"
-    RADIO = "#FF9800"
-    EVERBRIDGE = "#F44336"
-    EVENT = "#7E57C2"
-    STATS = "#00897B"
+    # Specific use colors - all monochrome
+    EMAIL = "#4a4a4a"
+    PHONE = "#4a4a4a"
+    RADIO = "#4a4a4a"
+    EVERBRIDGE = "#4a4a4a"
+    EVENT = "#4a4a4a"
+    STATS = "#4a4a4a"
 
-# Button styles
-def get_button_style(color, height=60):
+# Button styles - Professional dark theme
+def get_button_style(color=None, height=45):
     return f"""
         QPushButton {{
-            background-color: {color};
-            color: white;
-            border: none;
-            border-radius: 10px;
-            padding: 10px;
-            font-size: 16px;
-            font-weight: bold;
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+            border: 1px solid #333333;
+            border-radius: 4px;
+            padding: 8px 16px;
+            font-size: 11px;
+            font-weight: 500;
             min-height: {height}px;
         }}
         QPushButton:hover {{
-            background-color: {color}CC;
-            border: 2px solid {color};
+            background-color: #262626;
+            border: 1px solid #4a4a4a;
         }}
         QPushButton:pressed {{
-            background-color: {color}99;
+            background-color: #333333;
         }}
         QPushButton:disabled {{
-            background-color: #555555;
-            color: #999999;
+            background-color: #1a1a1a;
+            color: #4a4a4a;
         }}
     """
 
-# Colored button styles that work with dark theme
-def get_colored_button_style(color, height=60):
-    return f"""
-        QPushButton {{
-            background-color: {color};
-            color: white;
-            border: 1px solid {color};
-            border-radius: 10px;
-            padding: 10px;
-            font-size: 16px;
-            font-weight: bold;
-            min-height: {height}px;
-        }}
-        QPushButton:hover {{
-            background-color: {color}DD;
-            border: 2px solid white;
-        }}
-        QPushButton:pressed {{
-            background-color: {color}AA;
-        }}
-    """
+# Professional button style - monochrome only
+def get_colored_button_style(color=None, height=45):
+    return get_button_style(color, height)
 
-# Input field styles
+# Input field styles - Professional dark theme
 INPUT_STYLE = """
     QLineEdit, QTextEdit {
-        padding: 10px;
-        border: 2px solid #2196F3;
-        border-radius: 5px;
-        font-size: 14px;
+        padding: 8px;
+        background-color: #1a1a1a;
+        color: #e0e0e0;
+        border: 1px solid #333333;
+        border-radius: 4px;
+        font-size: 11px;
     }
     QLineEdit:focus, QTextEdit:focus {
-        border: 2px solid #1976D2;
-        background-color: #E3F2FD;
+        border: 1px solid #5a5a5a;
+        background-color: #1f1f1f;
     }
     QLineEdit:read-only {
-        background-color: #F5F5F5;
-        border: 2px solid #DDDDDD;
+        background-color: #141414;
+        color: #808080;
+        border: 1px solid #262626;
     }
 """
 
-# Table styles
+# Table styles - Professional dark theme
 TABLE_STYLE = """
     QTableWidget {
-        font-size: 14px;
-        gridline-color: #DDDDDD;
-        alternate-background-color: #F5F5F5;
+        font-size: 11px;
+        background-color: #141414;
+        color: #e0e0e0;
+        gridline-color: #262626;
+        alternate-background-color: #1a1a1a;
     }
     QTableWidget::item {
         padding: 8px;
     }
     QTableWidget::item:selected {
-        background-color: #2196F3;
-        color: white;
+        background-color: #333333;
+        color: #ffffff;
     }
     QHeaderView::section {
-        background-color: #1976D2;
-        color: white;
+        background-color: #1a1a1a;
+        color: #e0e0e0;
         padding: 10px;
-        font-weight: bold;
-        font-size: 14px;
+        font-weight: 600;
+        font-size: 11px;
+        border: 1px solid #262626;
     }
 """
 
-# Tab widget styles
+# Tab widget styles - Professional dark theme
 TAB_STYLE = """
     QTabWidget::tab-bar {
         alignment: center;
     }
     QTabBar::tab {
-        padding: 12px 24px;
+        padding: 10px 20px;
         margin: 2px;
-        font-size: 14px;
-        background-color: #E0E0E0;
+        font-size: 11px;
+        background-color: #1a1a1a;
+        color: #808080;
+        border: 1px solid #262626;
+        border-bottom: none;
     }
     QTabBar::tab:selected {
-        background-color: #2196F3;
-        color: white;
-        font-weight: bold;
+        background-color: #0d0d0d;
+        color: #e0e0e0;
+        font-weight: 500;
+        border-bottom: 2px solid #5a5a5a;
     }
     QTabBar::tab:hover {
-        background-color: #BBDEFB;
+        background-color: #1f1f1f;
+        color: #e0e0e0;
     }
 """
 
@@ -181,49 +174,58 @@ def show_error(parent, message):
     # Don't override theme styling for message boxes
     msg.exec()
 
-# Dropdown/ComboBox styles
+# Dropdown/ComboBox styles - Professional dark theme
 DROPDOWN_STYLE = """
     QComboBox {
-        padding: 10px;
-        border: 2px solid #2196F3;
-        border-radius: 5px;
-        font-size: 14px;
-        min-height: 40px;
+        padding: 8px;
+        background-color: #1a1a1a;
+        color: #e0e0e0;
+        border: 1px solid #333333;
+        border-radius: 4px;
+        font-size: 11px;
+        min-height: 35px;
     }
     QComboBox:focus {
-        border: 2px solid #1976D2;
-        background-color: #E3F2FD;
+        border: 1px solid #5a5a5a;
+        background-color: #1f1f1f;
     }
     QComboBox::drop-down {
-        width: 30px;
+        width: 20px;
+        background-color: #262626;
+        border: none;
     }
     QComboBox::down-arrow {
-        width: 12px;
-        height: 12px;
+        width: 10px;
+        height: 10px;
     }
     QComboBox QAbstractItemView {
-        font-size: 14px;
+        background-color: #1a1a1a;
+        color: #e0e0e0;
+        font-size: 11px;
         padding: 5px;
+        selection-background-color: #333333;
     }
 """
 
-# List widget styles
+# List widget styles - Professional dark theme
 LIST_STYLE = """
     QListWidget {
-        font-size: 14px;
+        font-size: 11px;
         padding: 5px;
-        border: 2px solid #DDDDDD;
-        border-radius: 5px;
+        background-color: #141414;
+        color: #e0e0e0;
+        border: 1px solid #333333;
+        border-radius: 4px;
     }
     QListWidget::item {
-        padding: 10px;
-        border-bottom: 1px solid #EEEEEE;
+        padding: 8px;
+        border-bottom: 1px solid #262626;
     }
     QListWidget::item:selected {
-        background-color: #2196F3;
-        color: white;
+        background-color: #333333;
+        color: #ffffff;
     }
     QListWidget::item:hover {
-        background-color: #BBDEFB;
+        background-color: #1f1f1f;
     }
 """

@@ -1,3 +1,179 @@
 2025-07-31 06:35:16,008 - __main__ - INFO - Security Ops Logger starting up
 2025-07-31 06:35:16,284 - database - INFO - Database initialized successfully and indexes created
 2025-07-31 06:35:50,994 - __main__ - INFO - Security Ops Logger closed
+2025-09-03 07:21:06,956 - __main__ - INFO - Security Ops Logger starting up
+2025-09-03 07:21:07,289 - database - INFO - Database initialized successfully and indexes created
+2025-09-03 07:21:28,872 - __main__ - INFO - Security Ops Logger closed
+2025-09-03 07:41:31,756 - __main__ - INFO - Security Ops Logger starting up
+2025-09-03 07:41:31,959 - database - INFO - Database initialized successfully and indexes created
+2025-09-03 07:43:02,523 - __main__ - INFO - Security Ops Logger closed
+2025-09-03 07:43:05,400 - __main__ - INFO - Security Ops Logger starting up
+2025-09-03 07:43:05,408 - __main__ - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "D:\Projects\HWGA\main.py", line 129, in <module>
+    main()
+    ~~~~^^
+  File "D:\Projects\HWGA\main.py", line 70, in main
+    apply_display_scaling(app)
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "D:\Projects\HWGA\app_settings.py", line 88, in apply_display_scaling
+    app.setAttribute(Qt.ApplicationAttribute.AA_EnableHighDpiScaling, True)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'ApplicationAttribute' has no attribute 'AA_EnableHighDpiScaling'
+2025-09-03 07:43:36,020 - __main__ - INFO - Security Ops Logger starting up
+2025-09-03 07:43:36,203 - database - INFO - Database initialized successfully and indexes created
+2025-09-03 07:48:10,658 - __main__ - INFO - Security Ops Logger closed
+2025-09-03 07:53:55,488 - __main__ - INFO - Security Ops Logger starting up
+2025-09-03 07:53:55,669 - database - INFO - Database initialized successfully and indexes created
+2025-09-03 07:54:00,105 - __main__ - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "D:\Projects\HWGA\ui\home.py", line 284, in open_logs_panel
+    from ui.logs_viewer_ui import LogsViewerPanel
+  File "D:\Projects\HWGA\ui\logs_viewer_ui.py", line 12, in <module>
+    import pandas as pd
+ModuleNotFoundError: No module named 'pandas'
+2025-09-03 07:54:32,710 - __main__ - INFO - Security Ops Logger closed
+2025-09-03 07:58:26,000 - __main__ - INFO - Security Ops Logger starting up
+2025-09-03 07:58:26,186 - database - INFO - Database initialized successfully and indexes created
+2025-09-03 07:58:49,370 - __main__ - INFO - Security Ops Logger closed
+2025-09-03 08:20:21,904 - __main__ - INFO - Security Ops Logger starting up
+2025-09-03 08:20:22,032 - database - INFO - Database initialized successfully and indexes created
+2025-09-03 08:20:30,547 - __main__ - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "D:\Projects\HWGA\ui\training_ui.py", line 552, in on_training_selected
+    self.display_training(training)
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "D:\Projects\HWGA\ui\training_ui.py", line 560, in display_training
+    f"Created by: {training['created_by']} on {training['created_date']}"
+                   ~~~~~~~~^^^^^^^^^^^^^^
+KeyError: 'created_by'
+2025-09-03 08:20:34,239 - __main__ - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "D:\Projects\HWGA\ui\training_ui.py", line 552, in on_training_selected
+    self.display_training(training)
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "D:\Projects\HWGA\ui\training_ui.py", line 560, in display_training
+    f"Created by: {training['created_by']} on {training['created_date']}"
+                   ~~~~~~~~^^^^^^^^^^^^^^
+KeyError: 'created_by'
+2025-09-03 08:20:35,999 - __main__ - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "D:\Projects\HWGA\ui\training_ui.py", line 552, in on_training_selected
+    self.display_training(training)
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "D:\Projects\HWGA\ui\training_ui.py", line 560, in display_training
+    f"Created by: {training['created_by']} on {training['created_date']}"
+                   ~~~~~~~~^^^^^^^^^^^^^^
+KeyError: 'created_by'
+2025-09-03 08:20:40,749 - __main__ - INFO - Security Ops Logger closed
+2025-09-03 08:20:45,746 - __main__ - INFO - Security Ops Logger starting up
+2025-09-03 08:20:45,937 - database - INFO - Database initialized successfully and indexes created
+2025-09-03 08:20:51,902 - __main__ - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "D:\Projects\HWGA\ui\help_utils.py", line 41, in open_help
+    self.training_window = TrainingPanel(direct_training_id=self.training_id)
+                           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Projects\HWGA\ui\training_ui.py", line 42, in __init__
+    self.open_specific_training(self.direct_training_id)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Projects\HWGA\ui\training_ui.py", line 686, in open_specific_training
+    self.on_training_selected(item)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "D:\Projects\HWGA\ui\training_ui.py", line 552, in on_training_selected
+    self.display_training(training)
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "D:\Projects\HWGA\ui\training_ui.py", line 560, in display_training
+    f"Created by: {training['created_by']} on {training['created_date']}"
+                   ~~~~~~~~^^^^^^^^^^^^^^
+KeyError: 'created_by'
+2025-09-03 08:20:59,846 - __main__ - INFO - Security Ops Logger closed
+2025-09-03 08:22:34,987 - __main__ - INFO - Security Ops Logger starting up
+2025-09-03 08:22:35,169 - database - INFO - Database initialized successfully and indexes created
+2025-09-03 08:24:35,302 - __main__ - INFO - Security Ops Logger closed
+2025-09-03 08:30:36,333 - __main__ - INFO - Security Ops Logger starting up
+2025-09-03 08:30:36,518 - database - INFO - Database initialized successfully and indexes created
+2025-09-03 08:35:12,147 - __main__ - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "D:\Projects\HWGA\ui\launcher_config.py", line 94, in launch
+    self.parent().save_launcher_configs()
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'QWidget' object has no attribute 'save_launcher_configs'
+2025-09-03 08:36:59,295 - __main__ - INFO - Security Ops Logger closed
+2025-09-03 08:37:01,759 - __main__ - INFO - Security Ops Logger starting up
+2025-09-03 08:37:01,942 - database - INFO - Database initialized successfully and indexes created
+2025-09-03 08:41:25,467 - __main__ - INFO - Security Ops Logger closed
+2025-09-03 08:43:00,343 - __main__ - INFO - Security Ops Logger starting up
+2025-09-03 08:43:00,524 - database - INFO - Database initialized successfully and indexes created
+2025-09-03 08:43:59,266 - __main__ - INFO - Security Ops Logger closed
+2025-09-03 08:49:23,968 - __main__ - INFO - Security Ops Logger starting up
+2025-09-03 08:49:24,142 - database - INFO - Database initialized successfully and indexes created
+2025-09-03 08:52:18,834 - __main__ - INFO - Security Ops Logger closed
+2025-09-03 08:59:25,219 - __main__ - INFO - Security Ops Logger starting up
+2025-09-03 08:59:25,402 - database - INFO - Database initialized successfully and indexes created
+2025-09-03 09:01:16,787 - __main__ - INFO - Security Ops Logger closed
+2025-09-03 09:27:04,208 - __main__ - INFO - Security Ops Logger starting up
+2025-09-03 09:27:04,389 - database - INFO - Database initialized successfully and indexes created
+2025-09-03 09:27:08,569 - __main__ - ERROR - Uncaught exception
+Traceback (most recent call last):
+  File "D:\Projects\HWGA\ui\email_ui.py", line 369, in load_recent_logs
+    self.status_bar.showMessage("No email logs found")
+    ^^^^^^^^^^^^^^^
+AttributeError: 'EmailPanel' object has no attribute 'status_bar'. Did you mean: 'statusBar'?
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "D:\Projects\HWGA\ui\home.py", line 310, in open_email_panel
+    self.email_window = EmailPanel()
+                        ~~~~~~~~~~^^
+  File "D:\Projects\HWGA\ui\email_ui.py", line 104, in __init__
+    self.init_ui()
+    ~~~~~~~~~~~~^^
+  File "D:\Projects\HWGA\ui\email_ui.py", line 342, in init_ui
+    self.load_recent_logs()
+    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "D:\Projects\HWGA\ui\email_ui.py", line 372, in load_recent_logs
+    self.status_bar.showMessage("Error loading logs")
+    ^^^^^^^^^^^^^^^
+AttributeError: 'EmailPanel' object has no attribute 'status_bar'. Did you mean: 'statusBar'?
+2025-09-03 09:27:19,018 - __main__ - INFO - Security Ops Logger closed
+2025-09-03 10:16:06,819 - __main__ - INFO - Security Ops Logger starting up
+2025-09-03 10:16:06,999 - database - INFO - Database initialized successfully and indexes created
+2025-09-03 10:16:18,038 - __main__ - INFO - Security Ops Logger closed
+2025-09-03 10:18:26,111 - __main__ - INFO - Security Ops Logger starting up
+2025-09-03 10:18:26,292 - database - INFO - Database initialized successfully and indexes created
+2025-09-03 10:18:37,650 - __main__ - INFO - Security Ops Logger closed
+2025-09-03 10:41:28,919 - __main__ - INFO - Security Ops Logger starting up
+2025-09-03 10:41:29,108 - database - INFO - Database initialized successfully and indexes created
+2025-09-03 10:44:10,380 - __main__ - INFO - Security Ops Logger closed
+2025-09-03 10:48:20,598 - __main__ - INFO - Security Ops Logger starting up
+2025-09-03 10:48:20,780 - database - INFO - Database initialized successfully and indexes created
+2025-09-03 10:49:20,382 - database - INFO - Inserted phone log of type 'Facilities'
+2025-09-03 10:49:35,618 - database - INFO - Inserted phone log of type 'On-Call Tech'
+2025-09-03 10:54:34,711 - __main__ - INFO - Security Ops Logger closed
+2025-09-03 10:54:37,779 - __main__ - INFO - Security Ops Logger starting up
+2025-09-03 10:54:37,960 - database - INFO - Database initialized successfully and indexes created
+2025-09-03 10:55:22,183 - database - INFO - Inserted phone log of type 'Facilities'
+2025-09-03 10:59:39,265 - database - INFO - Inserted phone log of type 'On-Call Tech'
+2025-09-03 11:03:34,135 - __main__ - INFO - Security Ops Logger closed
+2025-09-03 11:06:21,910 - __main__ - INFO - Security Ops Logger starting up
+2025-09-03 11:06:22,091 - database - INFO - Database initialized successfully and indexes created
+2025-09-03 11:06:49,919 - database - INFO - Inserted phone log of type 'Everbridge'
+2025-09-03 11:07:14,835 - database - INFO - Inserted email log of type 'Everbridge Alert'
+2025-09-03 11:07:28,611 - __main__ - INFO - Security Ops Logger closed
+2025-09-03 11:16:53,471 - __main__ - INFO - Security Ops Logger starting up
+2025-09-03 11:16:53,648 - database - INFO - Database initialized successfully and indexes created
+2025-09-03 11:17:54,778 - database - INFO - Inserted phone log of type 'Facilities'
+2025-09-03 11:17:56,777 - logic.event_handler - INFO - Created new event chain 'FSP 09-03-2025 1117 Facilities' with id 5
+2025-09-03 11:17:56,791 - logic.event_handler - INFO - Linked log id 0 from phone_logs to event chain 5
+2025-09-03 11:18:08,189 - database - INFO - Inserted phone log of type 'On-Call Tech'
+2025-09-03 11:22:10,630 - __main__ - INFO - Security Ops Logger closed
+2025-09-03 19:40:18,326 - __main__ - INFO - Security Ops Logger starting up
+2025-09-03 19:40:18,968 - database - INFO - Database initialized successfully and indexes created
+2025-09-03 19:52:47,616 - __main__ - INFO - Security Ops Logger closed
+2025-09-03 19:57:53,896 - __main__ - INFO - Security Ops Logger starting up
+2025-09-03 19:57:54,062 - database - INFO - Database initialized successfully and indexes created
+2025-09-03 19:58:01,269 - __main__ - INFO - Security Ops Logger closed
+2025-09-03 20:01:14,369 - __main__ - INFO - Security Ops Logger starting up
+2025-09-03 20:01:14,551 - database - INFO - Database initialized successfully and indexes created
+2025-09-03 20:01:29,865 - __main__ - INFO - Security Ops Logger closed

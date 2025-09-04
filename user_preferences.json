@@ -1,5 +1,5 @@
 {
-  "display_scale": 1.0,
+  "display_scale": 1,
   "start_fullscreen": true,
   "show_shortcuts": true,
   "theme": "dark",
@@ -10,8 +10,8 @@
     "main": {
       "x": 0,
       "y": 23,
-      "width": 2048,
-      "height": 1257
+      "width": 2560,
+      "height": 1417
     }
   },
   "dropdown_options": {

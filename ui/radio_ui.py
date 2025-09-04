@@ -1,12 +1,16 @@
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QLabel, QComboBox, QLineEdit,
     QPushButton, QHBoxLayout, QCheckBox, QMessageBox,
-    QMainWindow, QStatusBar, QGroupBox, QButtonGroup
+    QMainWindow, QStatusBar, QGroupBox, QButtonGroup,
+    QTabWidget, QTableWidget, QTableWidgetItem, QHeaderView
 )
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QShortcut, QKeySequence
 from datetime import datetime
 from database import insert_radio_log
+from log_manager import log_manager
+import pandas as pd
+from ui.help_utils import HelpButton, get_help_training_id
 from ui.styles import (
     Fonts, Colors,
     INPUT_STYLE, TABLE_STYLE, LIST_STYLE, DROPDOWN_STYLE,
@@ -64,13 +68,13 @@ class RadioPanel(QMainWindow):
         self.units = get_radio_units()  # Get from settings
         self.reasons = get_radio_reasons()  # Get from settings
         
-        self.init_ui()
-        self.setup_shortcuts()
-        
-        # Status bar
+        # Status bar - initialize BEFORE init_ui
         self.status_bar = QStatusBar()
         self.setStatusBar(self.status_bar)
         self.status_bar.showMessage("Ready to log radio dispatch")
+        
+        self.init_ui()
+        self.setup_shortcuts()
 
     def init_ui(self):
         # Central widget
@@ -81,11 +85,18 @@ class RadioPanel(QMainWindow):
         layout.setSpacing(20)
         layout.setContentsMargins(40, 30, 40, 30)
 
+        # Add help button in top right
+        header_layout = QHBoxLayout()
+        header_layout.addStretch()
+        help_btn = HelpButton("Radio Dispatch", get_help_training_id("radio"), self)
+        header_layout.addWidget(help_btn)
+        layout.addLayout(header_layout)
+        
         # Title
-        title = QLabel("📻 Radio Dispatch Logger")
+        title = QLabel("Radio Dispatch Logger")
         title.setFont(Fonts.TITLE)
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        title.setStyleSheet("margin-bottom: 30px;")
+        title.setStyleSheet("color: #e0e0e0; margin-bottom: 30px;")
         layout.addWidget(title)
 
         # Time section with visual enhancement
@@ -119,7 +130,7 @@ class RadioPanel(QMainWindow):
         make_accessible(self.timestamp_field, "Time of radio dispatch")
         time_layout.addWidget(self.timestamp_field)
         
-        now_btn = QPushButton("🕐 Update to Now")
+        now_btn = QPushButton("Update to Now")
         now_btn.setFont(Fonts.BUTTON)
         now_btn.setStyleSheet(get_button_style(Colors.INFO, 45))
         now_btn.clicked.connect(self.set_current_time)
@@ -257,25 +268,25 @@ class RadioPanel(QMainWindow):
         quick_group.setFont(Fonts.LABEL)
         quick_layout = QHBoxLayout()
         
-        arrived_only_btn = QPushButton("✅ Arrived Only")
+        arrived_only_btn = QPushButton("Arrived Only")
         arrived_only_btn.setFont(Fonts.BUTTON)
         arrived_only_btn.setStyleSheet(get_button_style("#4CAF50", 50))
         arrived_only_btn.clicked.connect(lambda: self.set_status(True, False))
         quick_layout.addWidget(arrived_only_btn)
         
-        departed_only_btn = QPushButton("🚪 Departed Only")
+        departed_only_btn = QPushButton("Departed Only")
         departed_only_btn.setFont(Fonts.BUTTON)
         departed_only_btn.setStyleSheet(get_button_style("#2196F3", 50))
         departed_only_btn.clicked.connect(lambda: self.set_status(False, True))
         quick_layout.addWidget(departed_only_btn)
         
-        both_btn = QPushButton("↔️ Both")
+        both_btn = QPushButton("Both")
         both_btn.setFont(Fonts.BUTTON)
         both_btn.setStyleSheet(get_button_style("#9C27B0", 50))
         both_btn.clicked.connect(lambda: self.set_status(True, True))
         quick_layout.addWidget(both_btn)
         
-        clear_btn = QPushButton("❌ Clear")
+        clear_btn = QPushButton("Clear")
         clear_btn.setFont(Fonts.BUTTON)
         clear_btn.setStyleSheet(get_button_style("#757575", 50))
         clear_btn.clicked.connect(lambda: self.set_status(False, False))
@@ -287,14 +298,144 @@ class RadioPanel(QMainWindow):
         layout.addStretch()
 
         # Save button
-        self.save_btn = QPushButton("💾 Save Dispatch Log (Ctrl+S)")
+        self.save_btn = QPushButton("Save Dispatch Log (Ctrl+S)")
         self.save_btn.setFont(Fonts.BUTTON_LARGE)
         self.save_btn.setStyleSheet(get_button_style(Colors.SUCCESS, 70))
         self.save_btn.clicked.connect(self.save_log)
         make_accessible(self.save_btn, "Save the radio dispatch log")
         layout.addWidget(self.save_btn)
 
-        central_widget.setLayout(layout)
+        # Create main tab widget for better organization
+        self.main_tabs = QTabWidget()
+        self.main_tabs.setStyleSheet("""
+            QTabWidget::pane {
+                border: 1px solid #333333;
+                background-color: #0d0d0d;
+                margin-top: -1px;
+            }
+            QTabBar::tab {
+                padding: 10px 20px;
+                background-color: #1a1a1a;
+                color: #808080;
+                border: 1px solid #262626;
+                margin-right: 2px;
+            }
+            QTabBar::tab:selected {
+                background-color: #0d0d0d;
+                color: #e0e0e0;
+                border-bottom: 2px solid #5a5a5a;
+            }
+        """)
+        
+        # Input Tab - contains existing form
+        input_widget = QWidget()
+        input_widget.setLayout(layout)
+        self.main_tabs.addTab(input_widget, "Log Radio Dispatch")
+        
+        # View Logs Tab
+        log_widget = QWidget()
+        log_layout = QVBoxLayout()
+        log_layout.setContentsMargins(20, 20, 20, 20)
+        
+        # Header with controls
+        controls_layout = QHBoxLayout()
+        
+        # Filter
+        controls_layout.addWidget(QLabel("Filter:"))
+        self.log_filter = QLineEdit()
+        self.log_filter.setPlaceholderText("Search logs...")
+        self.log_filter.textChanged.connect(self.filter_logs)
+        self.log_filter.setStyleSheet("""
+            QLineEdit {
+                padding: 8px;
+                background-color: #1a1a1a;
+                color: #e0e0e0;
+                border: 1px solid #333333;
+                border-radius: 4px;
+                max-width: 300px;
+            }
+        """)
+        controls_layout.addWidget(self.log_filter)
+        
+        controls_layout.addStretch()
+        
+        # Refresh button
+        refresh_btn = QPushButton("Refresh")
+        refresh_btn.clicked.connect(self.load_recent_logs)
+        refresh_btn.setFixedWidth(100)
+        refresh_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #1a1a1a;
+                color: #e0e0e0;
+                border: 1px solid #333333;
+                padding: 8px;
+                border-radius: 4px;
+            }
+            QPushButton:hover {
+                background-color: #262626;
+            }
+        """)
+        controls_layout.addWidget(refresh_btn)
+        
+        # Export button
+        export_btn = QPushButton("Export")
+        export_btn.clicked.connect(self.export_logs)
+        export_btn.setFixedWidth(100)
+        export_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #1a1a1a;
+                color: #e0e0e0;
+                border: 1px solid #333333;
+                padding: 8px;
+                border-radius: 4px;
+            }
+            QPushButton:hover {
+                background-color: #262626;
+            }
+        """)
+        controls_layout.addWidget(export_btn)
+        
+        log_layout.addLayout(controls_layout)
+        
+        # Table for logs
+        self.log_table = QTableWidget()
+        self.log_table.setStyleSheet("""
+            QTableWidget {
+                background-color: #141414;
+                color: #e0e0e0;
+                gridline-color: #262626;
+                alternate-background-color: #1a1a1a;
+            }
+            QTableWidget::item {
+                padding: 5px;
+            }
+            QTableWidget::item:selected {
+                background-color: #333333;
+            }
+            QHeaderView::section {
+                background-color: #1a1a1a;
+                color: #e0e0e0;
+                padding: 8px;
+                border: 1px solid #262626;
+                font-weight: 600;
+            }
+        """)
+        self.log_table.setAlternatingRowColors(True)
+        self.log_table.horizontalHeader().setStretchLastSection(True)
+        self.log_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        log_layout.addWidget(self.log_table)
+        
+        log_widget.setLayout(log_layout)
+        self.main_tabs.addTab(log_widget, "View Radio Logs")
+        
+        # Set main layout
+        main_layout = QVBoxLayout()
+        main_layout.setContentsMargins(10, 10, 10, 10)
+        main_layout.addWidget(self.main_tabs)
+        central_widget.setLayout(main_layout)
+        
+        # Load initial logs
+        self.load_recent_logs()
 
     def setup_shortcuts(self):
         """Setup keyboard shortcuts"""
@@ -303,6 +444,7 @@ class RadioPanel(QMainWindow):
         QShortcut(QKeySequence("Ctrl+T"), self, self.set_current_time)
         QShortcut(QKeySequence("A"), self, lambda: self.arrived_checkbox.toggle())
         QShortcut(QKeySequence("D"), self, lambda: self.departed_checkbox.toggle())
+        QShortcut(QKeySequence("F5"), self, self.load_recent_logs)
 
     def set_current_time(self):
         """Set timestamp to current time"""
@@ -343,7 +485,105 @@ class RadioPanel(QMainWindow):
                 status_text.append("DEPARTED")
             status = " and ".join(status_text)
             
+            # Also save to Excel log
+            radio_data = {
+                'unit': unit,
+                'location': location,
+                'type': reason,
+                'message': f"{status} at {location}",
+                'priority': 'Normal',
+                'response': status
+            }
+            
+            try:
+                log_manager.add_radio_log(radio_data)
+                # Refresh the log display
+                self.load_recent_logs()
+            except Exception as e:
+                print(f"Error saving to Excel: {e}")
+            
             show_success(self, f"Radio dispatch log saved!\n\n{unit} {status} at {location}")
-            self.close()
+            
+            # Switch to logs tab to show the new entry
+            self.main_tabs.setCurrentIndex(1)
+            self.load_recent_logs()
         except Exception as e:
             show_error(self, f"Error saving log: {str(e)}")
+            self.status_bar.showMessage("Error saving log")
+    
+    def load_recent_logs(self):
+        """Load recent radio logs into the table"""
+        try:
+            df = log_manager.get_recent_logs('radio', limit=50)
+            self.current_df = df  # Store for filtering
+            if not df.empty:
+                self.log_table.setRowCount(len(df))
+                self.log_table.setColumnCount(len(df.columns))
+                self.log_table.setHorizontalHeaderLabels(df.columns.tolist())
+                
+                for row in range(len(df)):
+                    for col in range(len(df.columns)):
+                        value = str(df.iloc[row, col])
+                        item = QTableWidgetItem(value)
+                        self.log_table.setItem(row, col, item)
+                
+                # Adjust column widths
+                self.log_table.resizeColumnsToContents()
+                
+                # Update status
+                self.status_bar.showMessage(f"Loaded {len(df)} radio log entries")
+            else:
+                self.log_table.setRowCount(0)
+                self.log_table.setColumnCount(5)
+                self.log_table.setHorizontalHeaderLabels(["Date", "Time", "Unit", "Location", "Type"])
+                self.status_bar.showMessage("No radio logs found")
+        except Exception as e:
+            print(f"Error loading logs: {e}")
+            self.status_bar.showMessage("Error loading logs")
+    
+    def filter_logs(self):
+        """Filter logs based on search text"""
+        if not hasattr(self, 'current_df') or self.current_df.empty:
+            return
+        
+        search_text = self.log_filter.text().lower()
+        if not search_text:
+            # Show all if no filter
+            self.load_recent_logs()
+            return
+        
+        # Filter dataframe
+        filtered_df = self.current_df[
+            self.current_df.apply(
+                lambda row: any(search_text in str(cell).lower() for cell in row),
+                axis=1
+            )
+        ]
+        
+        # Update table
+        self.log_table.setRowCount(len(filtered_df))
+        for row in range(len(filtered_df)):
+            for col in range(len(filtered_df.columns)):
+                value = str(filtered_df.iloc[row, col])
+                item = QTableWidgetItem(value)
+                self.log_table.setItem(row, col, item)
+        
+        self.status_bar.showMessage(f"Showing {len(filtered_df)} of {len(self.current_df)} entries")
+    
+    def export_logs(self):
+        """Export logs to file"""
+        from PyQt6.QtWidgets import QFileDialog
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, "Export Radio Logs", "radio_logs_export.xlsx", 
+            "Excel Files (*.xlsx);;CSV Files (*.csv)"
+        )
+        if file_path:
+            try:
+                if hasattr(self, 'current_df'):
+                    if file_path.endswith('.csv'):
+                        self.current_df.to_csv(file_path, index=False)
+                    else:
+                        self.current_df.to_excel(file_path, index=False)
+                    QMessageBox.information(self, "Success", f"Logs exported to {file_path}")
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to export: {str(e)}")

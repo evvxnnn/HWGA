@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python:*)",
+      "Bash(.venvScriptsactivate)",
+      "Bash(powershell:*)",
+      "Bash(cmd /c:*)",
+      "Bash(call venvScriptsactivate)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
